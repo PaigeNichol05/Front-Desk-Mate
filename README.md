@@ -1,0 +1,68 @@
+# Front Desk Mate · practice-management foundation
+
+A runnable, dependency-free Node 24 and SQLite starter for one unified patient/physician/billing workflow. The local demo links patient charts, encounters, code review, checkout, and claim tracking. **It is a development prototype, not an EHR certified for clinical use, a HIPAA compliance certification, or a live payer connection. Do not enter real patient information.**
+
+## Run locally
+
+```bash
+cp .env.example .env
+# Set SESSION_SECRET to a new random value of at least 32 characters.
+set -a; . ./.env; set +a
+npm start
+```
+
+Open `http://127.0.0.1:3000`. Requires Node 24 or later; `npm install` is unnecessary. `npm test` runs the billing gate tests. `SEED_DEMO=true` works only outside production and seeds fictional users:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Physician | `doctor@example.test` | `DemoOnly!ChangeMe123` |
+| Patient | `patient@example.test` | `DemoOnly!ChangeMe123` |
+| Biller | `biller@example.test` | `DemoOnly!ChangeMe123` |
+
+## What works in the demo
+
+- Role-specific Today, Patients, Schedule, Inbox, Files (patient), and Billing screens. Patients can see only their own chart metadata, appointments, file list, claims, and authorizations. Practice users are restricted to their organization; clinician signing/checkout is limited to the assigned physician.
+- Structured sections for symptoms, history, medication, allergies, exam, assessment, plan, lab, consent, calls, messages, and dictation text. Signed encounters lock clinical sections in this starter. Images and PDFs are stored outside the public directory and downloaded only after authorization checks.
+- Manual ICD-10-CM, CPT, HCPCS, and modifier **suggestions for review**. The checkout form accepts reviewed procedure/diagnosis/modifier entries. The example code in the test is a specimen, not a coding recommendation. There is no AI code inference, official code catalog, payer rule engine, or licensed CPT dataset included.
+- At checkout, required signed documentation, assessment, plan, demographic coverage, line structure, and any linked approved authorization are checked. A transaction creates the claim and lines once, marks the encounter checked out, and records an event. Status is `AWAITING_CONNECTOR`, explicitly meaning **not transmitted**.
+- Biller APIs for authorization requests, recorded denials, draft appeals, payment posting, claim events, and claim status. Patient claim view omits member IDs. External acknowledgments and remittances require an integration.
+
+## Architecture and boundaries
+
+```text
+Browser (patient / physician / biller)
+  → same-origin HTTP API + session cookie + CSRF token
+  → org and patient authorization checks
+  → SQLite clinical, revenue, audit models
+  → private local uploads
+  → clearinghouse adapter boundary (unimplemented)
+```
+
+Schema lives in `src/db.js`; checkout validation and transaction in `src/billing.js`; API/auth/file access in `src/server.js`; UI in `public/`. `docs/INTEGRATIONS.md` maps the payer lifecycle and production gates. `docs/API.md` lists endpoints. The SQLite schema is a starting model, not a migration system. No external data is shared by the demo.
+
+### Checkout and payer submission
+
+The intended flow is `Finish & Sign → code and documentation review → authorization match → checkout → claim queue → clearinghouse 837P/837I → payer acknowledgment/rejection → 276/277 status → remittance/payment → denial and appeal`. The starter implements through the claim queue. A contracted clearinghouse, enrollment, provider identifiers, trading-partner testing, payer-specific edits, transmission retry/idempotency, X12 generation/parsing, and secure status/remittance ingestion must be added before transmission. Do not relabel queued claims as submitted.
+
+## Environment
+
+See `.env.example`. `SESSION_SECRET` is required. `DATABASE_PATH` and `UPLOAD_DIR` must point to private persistent storage. `PAYER_ADAPTER=none` documents the inactive integration. Production rejects demo seeding. The in-memory session map is local-demo-only: restarting logs users out, and multiple replicas do not share sessions.
+
+## Deploy a non-PHI demonstration
+
+1. Create a **private** GitHub repository and upload the repository contents, excluding `.env`, `data/`, and `uploads/` (already ignored).
+2. Provision a Node 24 runtime with persistent disk. Set `NODE_ENV=production`, `HOST=0.0.0.0`, `PORT` to the platform port, `SESSION_SECRET` to a generated secret, `SEED_DEMO=false`, `DATABASE_PATH` and `UPLOAD_DIR` to persistent private paths. Start with `npm start`.
+3. For a useful hosted demo, create separate fictional accounts via a controlled seed/admin workflow; the sample login only exists with `SEED_DEMO=true` in development. Do not expose the sample password publicly.
+4. Before any real PHI or live payer exchange, replace demo authentication/session storage, complete risk analysis and vendor agreements, implement encryption/key management, backups and restore drills, malware scanning for uploads, retention controls, granular chart access and audit review, migrations, consent/privacy workflows, secure monitoring, incident response, and clearinghouse certification/testing. Have counsel/compliance and clinical billing specialists review the implementation.
+
+For Railway, create a private repository first, connect it as a service, choose Node 24, set the variables above and a persistent volume. A Railway deployment alone does not establish suitability for PHI; verify current contractual and security requirements before any clinical use.
+
+## Reference points
+
+- [HHS Security Rule overview](https://www.hhs.gov/hipaa/for-professionals/security/laws-regulations/index.html) for access, audit, transmission, and organizational safeguards.
+- [CMS electronic claim status 276/277](https://www.cms.gov/medicare/coding-billing/electronic-billing/claim-status-request-response) for claim-status transaction context.
+- [CMS ICD-10 updates](https://www.cms.gov/medicare/coding-billing/ICD-10-codes) and [HCPCS overview](https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system) for maintained code sets. CPT is maintained by the AMA and needs appropriate licensing for a product catalog.
+
+## Roadmap
+
+Priority: durable authentication and migrations; appointments/check-in and patient intake; coded terminology and professional review controls; eligibility and prior authorization connector; claims clearinghouse worker and webhook inbox; remittance reconciliation; appeal submission and document packages; full document imaging, comparison, communication, and clinical decision support. AI output should stay reviewable and attributable to a human professional.
