@@ -4,7 +4,7 @@
 
 ## First, review the product
 
-Open the [fictional demo](https://front-desk-mate-demo-production.up.railway.app/). It needs no login. Tap **Open patient chart**, add the fictional assessment and plan, sign, and check out. Change **View as** to Billing to simulate a denial and appeal or Patient to see the patient side. **Reset demo** starts over. Nothing persists after reload and no payer receives a claim. The local API in the repository is a deeper development foundation, but it is not the hosted demo.
+Open the [fictional demo](https://front-desk-mate-demo-production.up.railway.app/). It needs no login. Tap **Patients**, add the fictional assessment and plan, sign, and check out. Change **View as** to Billing to simulate a denial and appeal or Patient to see the patient side. Reloading starts over. Nothing persists after reload and no payer receives a claim. The local API in the repository is a deeper development foundation, but it is not the hosted demo. An in-page walkthrough and reset button are prepared in the repository for the next source deployment.
 
 ## Lower-cost production candidate: Google Cloud
 
