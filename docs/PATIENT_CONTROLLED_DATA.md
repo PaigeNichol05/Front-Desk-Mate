@@ -14,7 +14,7 @@ Front Desk Mate's stated goal also includes the physician's chart, checkout, bil
 | Railway deployment | Static UI with no PHI requests, logs, or storage may be possible without a Railway BAA for **that hosting role** | Railway processes or maintains ePHI: execute BAA and implement safeguards before use |
 | App operator | Independent consumer app may fall outside HIPAA business-associate role, but other privacy/security law may apply | Contracted practice-management/billing app likely requires business-associate analysis and a BAA |
 
-## Recommended hybrid design for cost control
+## Alternative considered for cost control
 
 1. Serve only static interface files from Railway. Do not put patient IDs, clinical details, tokens, images, or claim contents in Railway URLs, logs, analytics, support tickets, or server requests.
 2. The optional patient PHR stores local encrypted data with device-based access, export, and explicit patient sharing. Design backup and recovery carefully so losing a phone does not silently erase the sole usable copy. Treat minors, proxies, and revoked access as separate workflows.
@@ -22,11 +22,11 @@ Front Desk Mate's stated goal also includes the physician's chart, checkout, bil
 4. Authenticate and authorize staff and patients independently. Track who shared what, when, and with whom. Review where browser caches, crash reports, telemetry, and third-party scripts could expose data.
 5. Verify each vendor's role and agreement with counsel. If Railway receives or maintains provider ePHI, even encrypted without the key, HHS still treats a no-view cloud provider as a business associate. Do not use client-side encryption as a BAA workaround.
 
-This approach could avoid the **Railway-specific** $1,000/month BAA tier only if Railway genuinely stays outside the PHI path. It does **not** eliminate the cost or obligations of a compliant record and billing backend. A direct-to-consumer PHR may instead have FTC Health Breach Notification Rule obligations. No production architecture or legal classification is approved yet.
+This alternative could avoid the **Railway-specific** $1,000/month BAA tier only if Railway genuinely stays outside the PHI path. It does **not** eliminate the cost or obligations of a compliant record and billing backend. A direct-to-consumer PHR may instead have FTC Health Breach Notification Rule obligations. No production deployment or legal classification is approved yet.
 
-## Decision before implementation
+## Product decision
 
-Choose whether Front Desk Mate is primarily (A) a patient-owned PHR companion connected to an existing provider EHR, or (B) the practice's replacement EHR and revenue-cycle system with a patient portal. The current demo illustrates B; the hybrid can support A plus a practice interface, but needs a named EHR/clearinghouse partner and reviewed data-flow boundaries.
+The owner selected Front Desk Mate as the practice's replacement EHR and revenue-cycle system with a patient portal. Therefore the hybrid alternative above is a cost/design comparison, not the current implementation plan. The practice's official chart and billing system require a compliant production environment; see [production architecture](PRODUCTION_ARCHITECTURE.md).
 
 ## Official sources
 

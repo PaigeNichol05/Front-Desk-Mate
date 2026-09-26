@@ -46,7 +46,9 @@ Follow [the fictional-data demo walkthrough](docs/DEMO_WALKTHROUGH.md) to see th
 
 See [Railway cost and capacity](docs/RAILWAY_COST_AND_CAPACITY.md) before selecting a BAA tier or setting a real-patient launch target.
 
-An alternative [patient-controlled data architecture](docs/PATIENT_CONTROLLED_DATA.md) could keep Railway's static hosting out of the PHI path while the practice uses a separately contracted record and billing backend. It requires a product and vendor decision before implementation.
+The [patient-controlled data analysis](docs/PATIENT_CONTROLLED_DATA.md) explains how patients can keep personal copies and why those copies cannot replace the practice's official chart and billing records.
+
+The selected product direction is a [full EHR and billing replacement](docs/PRODUCTION_ARCHITECTURE.md). Patient-controlled copies remain an optional portal feature. The Railway concept demo and the local API foundation do not satisfy the production gates in that document.
 
 ### Checkout and payer submission
 
