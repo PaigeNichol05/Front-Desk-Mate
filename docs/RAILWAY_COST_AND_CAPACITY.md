@@ -4,7 +4,7 @@
 
 The Railway service for the concept demo runs `npm run demo:host` from `railway.json`. It contains only fictional browser-side state, no database, no POST endpoint, no uploads, and no payer connection. It is **not** the working clinical API in `src/server.js` and is not suitable for patient information.
 
-Railway's public pricing currently lists a 30-day trial with $5 credit and no credit card required, Hobby at $5 minimum monthly usage, Pro at $20 minimum monthly usage, and a HIPAA BAA tier with a **$1,000 minimum monthly committed spend**. Railway says committed-spend pricing goes toward usage. Additional resource use can increase charges. Verify the account's actual plan and the agreement's term with Railway before any paid commitment. A full 12 months at the listed minimum would be $12,000; this is arithmetic, **not** a claim that the contract has a 12-month term.
+Railway's public pricing currently lists a 30-day trial with $5 credit and no credit card required, Hobby at $5 minimum monthly usage, Pro at $20 minimum monthly usage, and a HIPAA BAA tier with a **$1,000 minimum monthly committed spend**. Railway says committed-spend pricing goes toward usage. Its committed-spend documentation says the BAA tier requires **a year commitment paid monthly**, so the listed minimum is **$12,000 over that year**, subject to the actual agreement and any additional resource usage. The tier is available from a Pro workspace. Review the exact contract and scope before committing.
 
 Railway documentation describes HIPAA as a shared responsibility model. A signed BAA must be in effect before the service creates, receives, maintains, or transmits ePHI. The practice or platform operator still needs its own risk analysis, policies, access controls, audit and incident procedures, backup/restore plan, and vendor review. The current application has not passed those gates.
 
@@ -17,5 +17,6 @@ For production, replace those with a managed transactional database, shared dura
 ## Sources
 
 - [Railway pricing](https://railway.com/pricing)
+- [Railway committed-spend tiers](https://docs.railway.com/pricing/committed-spend)
 - [Railway compliance and HIPAA BAA](https://docs.railway.com/enterprise/compliance)
 - [HHS cloud BAA FAQ](https://www.hhs.gov/hipaa/for-professionals/faq/may-a-hipaa-covered-entity-or-business-associate-use-cloud-service-to-store-or-process-ephi/index.html)

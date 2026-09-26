@@ -33,7 +33,7 @@ The staff workspace keeps the requested **Today, Patients, Schedule, Inbox, Bill
 2. **Production preparation:** separate private project and managed database/object storage; no real PHI until written BAAs cover the actual services/subprocessors, the practice's risk analysis and controls are completed, and security/clinical/billing validation passes. Confirm every component is within the agreed BAA scope.
 3. **Production:** per-practice onboarding and payer enrollment, monitored deployment, backups and restore drill, incident plan, support process, go-live acceptance by the practice and appropriate reviewers.
 
-Railway currently lists a $1,000 minimum monthly commitment for its HIPAA BAA tier. No agreement or spend commitment has been made. The practice and platform operator should have qualified counsel determine their respective covered-entity/business-associate roles and contract terms before PHI is moved.
+Railway currently lists a $1,000 minimum monthly commitment for its HIPAA BAA tier and says it requires a year commitment paid monthly (a $12,000 listed minimum over that year). No agreement or spend commitment has been made. The practice and platform operator should have qualified counsel determine their respective covered-entity/business-associate roles and contract terms before PHI is moved.
 
 ## Delivery sequence and acceptance gates
 
@@ -57,6 +57,7 @@ The current repository implements a **development foundation**, not these exit c
 ## Official references
 
 - [HHS cloud BAA FAQ](https://www.hhs.gov/hipaa/for-professionals/faq/may-a-hipaa-covered-entity-or-business-associate-use-cloud-service-to-store-or-process-ephi/index.html)
+- [Railway committed-spend tiers](https://docs.railway.com/pricing/committed-spend)
 - [HHS risk analysis guidance](https://www.hhs.gov/hipaa/for-professionals/security/guidance/guidance-risk-analysis/index.html)
 - [CMS adopted electronic transaction standards](https://www.cms.gov/priorities/key-initiatives/burden-reduction/administrative-simplification/hipaa/adopted-standards-operating-rules)
 - [ONC CEHRT and CMS program reference](https://healthit.gov/resources/cms-ehr-certification-id-quick-reference-for-health-it-developers-and-cms-program-participants/)
