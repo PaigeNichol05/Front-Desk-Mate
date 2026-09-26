@@ -30,6 +30,20 @@ The public demo now has three fictional patients with independent browser-only c
 
 The patient care board joins demographics, care team, encounters, plan, tasks, referrals, messages, outreach, appointment history, authorizations and claim status into one authorized view. Tasks have owner, due time, priority, status, escalation and audit trail. Activity events reference their source record rather than duplicating clinical text into a broad CRM feed. Patients see only their portal view; billers and nonclinical staff do not automatically receive full chart access.
 
+## Physician dictation
+
+The physician chart offers distinct **Reason for appointment** and **Steps taken during visit** draft fields. In the public fictional demo, a clinician may load a sample, type, use a device keyboard microphone, or try the browser microphone where supported. The physician reviews the transcript and explicitly saves the draft; speech does not automatically sign a note, generate a diagnosis, create codes, or order treatment. Switching charts or roles stops any active microphone. The demo stores text only in browser memory and must never be used with real patient information.
+
+Browser speech recognition may send audio to the browser or device vendor for transcription. Feature availability and processing location vary. Production dictation requires an approved speech provider and agreement covering PHI, authenticated encounter context, access controls, clear microphone state, secure storage, audit history, retention policy, clinician correction and signature, and handling for transcription errors. Do not enable real patient dictation based on the public demo implementation.
+
+## Visit audio and portal access
+
+A proposed real workflow requires the physician to approve recording and obtain/document the applicable consent from the patient and any other participants before audio capture. Display recording status continuously, support pause/stop and refusal, and do not treat a portal checkbox as legally sufficient consent. The recording must attach to the correct encounter, with recording time, consent provenance, participants, creator, review status, publication event and access audit. The physician reviews the file and releases it to the patient portal; the patient and authorized care team can replay their permitted copy. Determine retention, amendment/correction, disclosure, revocation and access policies with counsel and the practice before launch. A recording is evidence of what was captured, not a guarantee that all clinical events or conversations were captured or that the contents are accurate.
+
+The **public demo** records at most 60 seconds of fictional speech into browser memory after separate simulated patient and physician approvals. It can replay a draft for the physician and a released sample in the patient Files view. It never uploads, persists or encrypts a medical audio file, and the role toggle is not authentication. Reloading erases the sample. Do not use this flow to record real patient visits. Production requires secure encrypted object storage, per-patient authorization checks, download controls, audit logging, backup/retention policy, breach response, signed vendor agreements where needed, and jurisdiction-specific recording/consent review.
+
+The structured dictation draft organizes the physician's words into reason, actions, findings, assessment, plan and follow-up prompts. Missing clinical facts stay marked for review; the application must not infer them or auto-sign the note. Use a clinician-reviewed transcript and attributed corrections.
+
 ## Reminders and messaging
 
 1. Collect and verify patient contact information, preferred channel and confidential communication restrictions. Offer portal notice, SMS or email according to the practice's reviewed policy. A reminder job references the appointment and a delivery window; it checks current appointment status and preference immediately before sending. Cancel or replace reminders on reschedule/cancellation. Record delivery attempts, suppression, failures and replies.
@@ -57,3 +71,6 @@ The on-call service needs a practice-approved, staffed roster with eligible phys
 - [HHS appointment reminder guidance](https://www.hhs.gov/hipaa/for-professionals/faq/may-health-care-providers-leave-messages/index.html)
 - [HHS email and confidential communication guidance](https://www.hhs.gov/hipaa/for-professionals/faq/does-hipaa-permit-health-care-providers-to-use-email-to-discuss-health-issues-with-patients/index.html)
 - [Twilio HIPAA eligibility and BAA overview](https://www.twilio.com/en-us/hipaa)
+
+- [HHS: access to recorded oral information](https://www.hhs.gov/hipaa/for-professionals/faq/369/does-hipaa-require-covered-entities-provide-patients-with-access-to-oral-information/index.html)
+- [HHS: right of access to a designated record set](https://www.hhs.gov/hipaa/for-professionals/faq/right-to-access-and-research/index.html)

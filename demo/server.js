@@ -11,7 +11,7 @@ const server=http.createServer((req,res)=>{
   if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405,{'Allow':'GET, HEAD'});return res.end()}
   if(path==='/health'){res.writeHead(200,{'Content-Type':'text/plain','Cache-Control':'no-store'});return res.end('ok')}
   const file=files[path];if(!file){res.writeHead(404);return res.end()}
-  const headers={'Content-Type':file[1],'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"};
+  const headers={'Content-Type':file[1],'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; img-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"};
   res.writeHead(200,headers);if(req.method==='HEAD')return res.end();res.end(readFileSync(join(root,file[0])));
 });
 server.listen(Number(process.env.PORT||3000),'0.0.0.0',()=>console.log('Fictional Front Desk Mate demo ready'));
