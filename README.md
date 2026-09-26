@@ -21,7 +21,7 @@ Open `http://127.0.0.1:3000`. Requires Node 24 or later; `npm install` is unnece
 
 ## What works in the demo
 
-- Role-specific Today, Patients, Schedule, Inbox, Files (patient), and Billing screens. Patients can see only their own chart metadata, appointments, file list, claims, and authorizations. Practice users are restricted to their organization; clinician signing/checkout is limited to the assigned physician.
+- Role-specific Today, Patients, Schedule, Inbox, Files, and Billing screens. Patients can see only their own chart metadata, appointments, file list, claims, and authorizations. Practice users are restricted to their organization; clinician signing/checkout is limited to the assigned physician.
 - Structured sections for symptoms, history, medication, allergies, exam, assessment, plan, lab, consent, calls, messages, and dictation text. Signed encounters lock clinical sections in this starter. Images and PDFs are stored outside the public directory and downloaded only after authorization checks.
 - Manual ICD-10-CM, CPT, HCPCS, and modifier **suggestions for review**. The checkout form accepts reviewed procedure/diagnosis/modifier entries. The example code in the test is a specimen, not a coding recommendation. There is no AI code inference, official code catalog, payer rule engine, or licensed CPT dataset included.
 - At checkout, required signed documentation, assessment, plan, demographic coverage, line structure, and any linked approved authorization are checked. A transaction creates the claim and lines once, marks the encounter checked out, and records an event. Status is `AWAITING_CONNECTOR`, explicitly meaning **not transmitted**.
@@ -40,6 +40,8 @@ Browser (patient / physician / biller)
 
 Schema lives in `src/db.js`; checkout validation and transaction in `src/billing.js`; API/auth/file access in `src/server.js`; UI in `public/`. `docs/INTEGRATIONS.md` maps the payer lifecycle and production gates. `docs/API.md` lists endpoints. The SQLite schema is a starting model, not a migration system. No external data is shared by the demo.
 
+Follow [the fictional-data demo walkthrough](docs/DEMO_WALKTHROUGH.md) to see the physician, patient, and billing flow. Read [production-readiness gates](docs/PRODUCTION_READINESS.md) before planning any real patient use.
+
 ### Checkout and payer submission
 
 The intended flow is `Finish & Sign → code and documentation review → authorization match → checkout → claim queue → clearinghouse 837P/837I → payer acknowledgment/rejection → 276/277 status → remittance/payment → denial and appeal`. The starter implements through the claim queue. A contracted clearinghouse, enrollment, provider identifiers, trading-partner testing, payer-specific edits, transmission retry/idempotency, X12 generation/parsing, and secure status/remittance ingestion must be added before transmission. Do not relabel queued claims as submitted.
@@ -50,7 +52,7 @@ See `.env.example`. `SESSION_SECRET` is required. `DATABASE_PATH` and `UPLOAD_DI
 
 ## Deploy a non-PHI demonstration
 
-1. Create a **private** GitHub repository and upload the repository contents, excluding `.env`, `data/`, and `uploads/` (already ignored).
+1. Make the existing GitHub repository **private** before adding production infrastructure or nonpublic operational details. Never commit `.env`, `data/`, or `uploads/` (already ignored).
 2. Provision a Node 24 runtime with persistent disk. Set `NODE_ENV=production`, `HOST=0.0.0.0`, `PORT` to the platform port, `SESSION_SECRET` to a generated secret, `SEED_DEMO=false`, `DATABASE_PATH` and `UPLOAD_DIR` to persistent private paths. Start with `npm start`.
 3. For a useful hosted demo, create separate fictional accounts via a controlled seed/admin workflow; the sample login only exists with `SEED_DEMO=true` in development. Do not expose the sample password publicly.
 4. Before any real PHI or live payer exchange, replace demo authentication/session storage, complete risk analysis and vendor agreements, implement encryption/key management, backups and restore drills, malware scanning for uploads, retention controls, granular chart access and audit review, migrations, consent/privacy workflows, secure monitoring, incident response, and clearinghouse certification/testing. Have counsel/compliance and clinical billing specialists review the implementation.
