@@ -46,6 +46,8 @@ Follow [the fictional-data demo walkthrough](docs/DEMO_WALKTHROUGH.md) to see th
 
 See [Railway cost and capacity](docs/RAILWAY_COST_AND_CAPACITY.md) before selecting a BAA tier or setting a real-patient launch target.
 
+An alternative [patient-controlled data architecture](docs/PATIENT_CONTROLLED_DATA.md) could keep Railway's static hosting out of the PHI path while the practice uses a separately contracted record and billing backend. It requires a product and vendor decision before implementation.
+
 ### Checkout and payer submission
 
 The intended flow is `Finish & Sign → code and documentation review → authorization match → checkout → claim queue → clearinghouse 837P/837I → payer acknowledgment/rejection → 276/277 status → remittance/payment → denial and appeal`. The starter implements through the claim queue. A contracted clearinghouse, enrollment, provider identifiers, trading-partner testing, payer-specific edits, transmission retry/idempotency, X12 generation/parsing, and secure status/remittance ingestion must be added before transmission. Do not relabel queued claims as submitted.
