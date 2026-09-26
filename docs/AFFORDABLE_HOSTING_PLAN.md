@@ -4,7 +4,7 @@
 
 ## First, review the product
 
-Open the [fictional demo](https://front-desk-mate-demo-production.up.railway.app/). It needs no login. Tap **Patients**, add the fictional assessment and plan, sign, and check out. Change **View as** to Billing to simulate a denial and appeal or Patient to see the patient side. Reloading starts over. Nothing persists after reload and no payer receives a claim. The local API in the repository is a deeper development foundation, but it is not the hosted demo. An in-page walkthrough and reset button are prepared in the repository for the next source deployment.
+Open the [fictional demo](https://front-desk-mate-demo-production.up.railway.app/). It needs no login. Tap **Open patient chart**, record the sample assessment and plan, sign, then open **Billing**. Review the displayed example CPT `99213`, ICD-10-CM `M54.50`, and modifier options. Try requiring authorization to see checkout remain blocked until a simulated approval. Review the documentation checks, check out, then step through acknowledgment, payer review, denial, appeal draft, and resolution. Change **View as** to Patient to see that side. **Reset demo** starts over. Everything is in browser memory; no payer receives a claim. The local API in the repository is a deeper development foundation, but it is not the hosted demo.
 
 ## Lower-cost production candidate: Google Cloud
 
