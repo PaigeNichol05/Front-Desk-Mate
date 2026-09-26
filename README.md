@@ -1,8 +1,8 @@
-# Managing Patient Care (MPC) · practice-management foundation
+# Front Desk Mate · practice-management foundation
 
 A runnable, dependency-free Node 24 and SQLite starter for one unified patient/physician/billing workflow. The local demo links patient charts, encounters, code review, checkout, and claim tracking. **It is a development prototype, not an EHR certified for clinical use, a HIPAA compliance certification, or a live payer connection. Do not enter real patient information.**
 
-The product is now named **Managing Patient Care (MPC)**. The existing `Front-Desk-Mate` repository and Railway demo address remain in place. See the [care CRM, scheduling, reminders and on-call design](docs/MPC_CARE_CRM.md). The public demo simulates these features; the local API does not yet implement the new booking, reminder or chatbot services.
+**Front Desk Mate** is the patient-facing product name. “Managing patient care” describes its purpose, not its name. The existing repository and Railway demo address remain in place. See the [care CRM, scheduling, reminders and on-call design](docs/MPC_CARE_CRM.md). The public demo simulates these features; the local API does not yet implement the new booking, reminder or chatbot services.
 
 ## Run locally
 
@@ -81,7 +81,7 @@ The production target is being reevaluated for cost. The current Railway service
 
 Priority: durable authentication and migrations; appointments/check-in and patient intake; coded terminology and professional review controls; eligibility and prior authorization connector; claims clearinghouse worker and webhook inbox; remittance reconciliation; appeal submission and document packages; full document imaging, comparison, communication, and clinical decision support. AI output should stay reviewable and attributable to a human professional.
 
-## MPC multi-patient demo and clinician handoff
+## Multi-patient demo and clinician handoff
 
 The public demo contains three fictional patient charts. Open **Patients** or **Care board** to switch charts, then **Schedule** to book and review the physician handoff. The physician can keep an eligible follow-up or reassign it to a sample PA or NP. The patient view hides both clinician name and role until the appointment day. Staff can use **Preview appointment day** in the fictional walkthrough. The physician can record a sample care plan from the chart. These browser-only controls are not production access control or clinical credential checks. See [care CRM specification](docs/MPC_CARE_CRM.md).
 

@@ -1,6 +1,6 @@
-# Managing Patient Care (MPC) · care CRM specification
+# Front Desk Mate · managing patient care specification
 
-MPC is the intended product name. The GitHub repository and existing Railway concept-demo URL retain the Front Desk Mate name for continuity. This is a **practice EHR, patient portal, scheduling, care coordination and revenue-cycle replacement**, not a sales contact database. The public browser demo uses fictional state and sends no messages, claims or bookings.
+Front Desk Mate is the patient-facing product name. “Managing patient care” describes the platform’s function, not its brand. The GitHub repository and Railway concept-demo URL use Front Desk Mate. This is a **practice EHR, patient portal, scheduling, care coordination and revenue-cycle replacement**, not a sales contact database. The public browser demo uses fictional state and sends no messages, claims or bookings.
 
 ## Scheduling and visit flow
 
@@ -33,7 +33,7 @@ The patient care board joins demographics, care team, encounters, plan, tasks, r
 ## Reminders and messaging
 
 1. Collect and verify patient contact information, preferred channel and confidential communication restrictions. Offer portal notice, SMS or email according to the practice's reviewed policy. A reminder job references the appointment and a delivery window; it checks current appointment status and preference immediately before sending. Cancel or replace reminders on reschedule/cancellation. Record delivery attempts, suppression, failures and replies.
-2. Default external message: “You have an upcoming appointment. Please sign in to MPC or call the office for details.” Do not include diagnosis, procedure, patient ID or a chart link containing a token in plain SMS. A patient may request alternative communication, which the practice must handle as required by its policy and law.
+2. Default external message: “You have an upcoming appointment. Please sign in to Front Desk Mate or call the office for details.” Do not include diagnosis, procedure, patient ID or a chart link containing a token in plain SMS. A patient may request alternative communication, which the practice must handle as required by its policy and law.
 3. A patient portal conversation creates an authenticated thread, staff task and audit events. A third-party delivery or AI service touching PHI needs a scoped BAA and technical safeguards before integration. The public demo's “send” and chat topic buttons are **simulations**, not delivery or a live model.
 
 ## Human-like assistant and on-call routing
