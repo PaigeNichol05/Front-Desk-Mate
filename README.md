@@ -42,6 +42,8 @@ Schema lives in `src/db.js`; checkout validation and transaction in `src/billing
 
 Follow [the fictional-data demo walkthrough](docs/DEMO_WALKTHROUGH.md) to see the physician, patient, and billing flow. Read [production-readiness gates](docs/PRODUCTION_READINESS.md) before planning any real patient use.
 
+`npm run demo:host` starts a separate, read-only interactive concept on port 3000. The root `railway.json` deliberately deploys this concept demo by default. It has no database, server-side forms, uploads, or insurer connection. The working local app remains `npm start` and must not be deployed for PHI until the production gates are met.
+
 ### Checkout and payer submission
 
 The intended flow is `Finish & Sign → code and documentation review → authorization match → checkout → claim queue → clearinghouse 837P/837I → payer acknowledgment/rejection → 276/277 status → remittance/payment → denial and appeal`. The starter implements through the claim queue. A contracted clearinghouse, enrollment, provider identifiers, trading-partner testing, payer-specific edits, transmission retry/idempotency, X12 generation/parsing, and secure status/remittance ingestion must be added before transmission. Do not relabel queued claims as submitted.
