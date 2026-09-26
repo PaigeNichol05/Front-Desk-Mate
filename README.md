@@ -46,6 +46,8 @@ Follow [the fictional-data demo walkthrough](docs/DEMO_WALKTHROUGH.md) to see th
 
 See [Railway cost and capacity](docs/RAILWAY_COST_AND_CAPACITY.md) before selecting a BAA tier or setting a real-patient launch target.
 
+The Railway BAA tier is outside the owner's budget. Review the [affordable hosting plan](docs/AFFORDABLE_HOSTING_PLAN.md) and [try the fictional demo](https://front-desk-mate-demo-production.up.railway.app/) before any paid production decision.
+
 The [patient-controlled data analysis](docs/PATIENT_CONTROLLED_DATA.md) explains how patients can keep personal copies and why those copies cannot replace the practice's official chart and billing records.
 
 The selected product direction is a [full EHR and billing replacement](docs/PRODUCTION_ARCHITECTURE.md). Patient-controlled copies remain an optional portal feature. The Railway concept demo and the local API foundation do not satisfy the production gates in that document.
@@ -65,7 +67,7 @@ See `.env.example`. `SESSION_SECRET` is required. `DATABASE_PATH` and `UPLOAD_DI
 3. For a useful hosted demo, create separate fictional accounts via a controlled seed/admin workflow; the sample login only exists with `SEED_DEMO=true` in development. Do not expose the sample password publicly.
 4. Before any real PHI or live payer exchange, replace demo authentication/session storage, complete risk analysis and vendor agreements, implement encryption/key management, backups and restore drills, malware scanning for uploads, retention controls, granular chart access and audit review, migrations, consent/privacy workflows, secure monitoring, incident response, and clearinghouse certification/testing. Have counsel/compliance and clinical billing specialists review the implementation.
 
-For Railway, create a private repository first, connect it as a service, choose Node 24, set the variables above and a persistent volume. A Railway deployment alone does not establish suitability for PHI; verify current contractual and security requirements before any clinical use.
+The production target is being reevaluated for cost. The current Railway service is only the fictional concept demo. Do not deploy this API for PHI to Railway or any other host until the production gates and agreements are complete.
 
 ## Reference points
 

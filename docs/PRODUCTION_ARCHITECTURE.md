@@ -27,13 +27,13 @@ The staff workspace keeps the requested **Today, Patients, Schedule, Inbox, Bill
 | Audit | Tamper-evident access and change events, monitored security logs, accounting/export support, no PHI in routine application logs |
 | Patient copy | Patient-directed export and sharing with local encryption and recovery choices; practice record remains available if patient device is lost or offline |
 
-## Railway environments
+## Deployment environments
 
 1. **Concept demo:** current Railway project; fictional browser-only state, no PHI, no server writes.
-2. **Production preparation:** separate private project and managed database/object storage; no real PHI until written BAAs cover the actual services/subprocessors, the practice's risk analysis and controls are completed, and security/clinical/billing validation passes. Confirm every component is within the agreed BAA scope.
+2. **Production preparation:** [lower-cost hosting plan](AFFORDABLE_HOSTING_PLAN.md) evaluates Google Cloud; create a separate private project and managed database/object storage. No real PHI until written BAAs cover the actual services/subprocessors, the practice's risk analysis and controls are completed, and security/clinical/billing validation passes. Confirm every component is within the agreed BAA scope.
 3. **Production:** per-practice onboarding and payer enrollment, monitored deployment, backups and restore drill, incident plan, support process, go-live acceptance by the practice and appropriate reviewers.
 
-Railway currently lists a $1,000 minimum monthly commitment for its HIPAA BAA tier and says it requires a year commitment paid monthly (a $12,000 listed minimum over that year). No agreement or spend commitment has been made. The practice and platform operator should have qualified counsel determine their respective covered-entity/business-associate roles and contract terms before PHI is moved.
+Railway currently lists a $1,000 minimum monthly commitment for its HIPAA BAA tier and says it requires a year commitment paid monthly (a $12,000 listed minimum over that year). The owner declined that production cost. No agreement or spend commitment has been made. The practice and platform operator should have qualified counsel determine their respective covered-entity/business-associate roles and contract terms before PHI is moved.
 
 ## Delivery sequence and acceptance gates
 
@@ -49,7 +49,7 @@ The current repository implements a **development foundation**, not these exit c
 
 ## Decisions needed to progress
 
-- Accept or reject Railway's BAA cost and obtain the exact agreement and scope before production PHI hosting.
+- Estimate the Google Cloud alternative and obtain the exact BAA scope before production PHI hosting; Railway's current BAA tier is outside the budget.
 - Identify the first practice, specialty, locations, user roles, current data sources, and migration requirements.
 - Select a clearinghouse and confirm contracts, payer enrollment, transaction types, and test access.
 - Determine which CMS programs and state-specific clinical/retention requirements apply to the first practice.
