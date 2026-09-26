@@ -84,3 +84,5 @@ Priority: durable authentication and migrations; appointments/check-in and patie
 ## MPC multi-patient demo and clinician handoff
 
 The public demo contains three fictional patient charts. Open **Patients** or **Care board** to switch charts, then **Schedule** to book and review the physician handoff. The physician can keep an eligible follow-up or reassign it to a sample PA or NP. The patient view hides both clinician name and role until the appointment day. Staff can use **Preview appointment day** in the fictional walkthrough. The physician can record a sample care plan from the chart. These browser-only controls are not production access control or clinical credential checks. See [care CRM specification](docs/MPC_CARE_CRM.md).
+
+The Schedule demo accepts a broad visit type with **optional** additional details. Office injections and office surgery with local anesthesia use office days; surgery-center surgery uses Friday requests. Surgical slots require staff confirmation in the sample flow. These scheduling labels do not suggest billing codes.
