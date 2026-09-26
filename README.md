@@ -1,6 +1,8 @@
-# Front Desk Mate · practice-management foundation
+# Managing Patient Care (MPC) · practice-management foundation
 
 A runnable, dependency-free Node 24 and SQLite starter for one unified patient/physician/billing workflow. The local demo links patient charts, encounters, code review, checkout, and claim tracking. **It is a development prototype, not an EHR certified for clinical use, a HIPAA compliance certification, or a live payer connection. Do not enter real patient information.**
+
+The product is now named **Managing Patient Care (MPC)**. The existing `Front-Desk-Mate` repository and Railway demo address remain in place. See the [care CRM, scheduling, reminders and on-call design](docs/MPC_CARE_CRM.md). The public demo simulates these features; the local API does not yet implement the new booking, reminder or chatbot services.
 
 ## Run locally
 
