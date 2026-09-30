@@ -4,6 +4,7 @@ import { resolve, join, basename } from 'node:path';
 import { randomBytes, timingSafeEqual, scryptSync, createHmac } from 'node:crypto';
 import { openDb, seed, uid, now, audit } from './db.js';
 import { checkout, documentationChecks } from './billing.js';
+import { createAudioService } from './audio.js';
 
 const root=resolve(import.meta.dirname,'..');
 const db=openDb(resolve(root,process.env.DATABASE_PATH||'data/clinic.db'));
@@ -17,8 +18,13 @@ if(!secret || secret.length<32) throw new Error('Set SESSION_SECRET to at least 
 const uploadDir=resolve(root,process.env.UPLOAD_DIR||'uploads');
 mkdirSync(uploadDir,{recursive:true});
 const port=Number(process.env.PORT||3000), host=process.env.HOST||(dev?'127.0.0.1':'0.0.0.0');
+if(process.env.FICTIONAL_AUDIO_DEMO==='true' && (!dev || process.env.SEED_DEMO!=='true')) throw new Error('Synthetic audio requires nonproduction and SEED_DEMO=true');
+const audioDir=resolve(root,process.env.AUDIO_DIR||'data/private-audio');
+for(const publicDir of [join(root,'public'),join(root,'demo')]) if(audioDir===publicDir || audioDir.startsWith(publicDir+'/')) throw new Error('Audio storage must be outside served assets');
+const audio=createAudioService(db,audioDir,{enabled:dev && process.env.SEED_DEMO==='true' && process.env.FICTIONAL_AUDIO_DEMO==='true'});
+if(process.env.FICTIONAL_AUDIO_DEMO==='true') { audio.sweep(); setInterval(()=>{try{audio.sweep()}catch(e){console.error('Synthetic audio maintenance failed',e.message)}},30000).unref(); }
 const sessions=new Map(); // Local demo only; production requires shared durable session storage.
-const json=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(JSON.stringify(data));};
+const json=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(JSON.stringify(data));};
 const fail=(status,message,details)=>Object.assign(new Error(message),{status,details});
 function body(req,max=1000000){return new Promise((resolveBody,reject)=>{let parts=[],size=0;req.on('data',c=>{size+=c.length;if(size>max){reject(fail(413,'Request too large'));req.destroy();}else parts.push(c)});req.on('end',()=>{try{resolveBody(JSON.parse(Buffer.concat(parts).toString()||'{}'))}catch{reject(fail(400,'Invalid JSON'))}});req.on('error',reject)});}
 function session(req){const token=/\bclinic_session=([^;]+)/.exec(req.headers.cookie||'')?.[1];if(!token)return null;const key=createHmac('sha256',secret).update(token).digest('hex');const s=sessions.get(key);if(!s||s.expires<Date.now()){sessions.delete(key);return null}return s;}
@@ -40,6 +46,18 @@ async function api(req,res,url){
   }
   if(path==='/api/session'&&req.method==='GET') {const u=requireUser(req);return json(res,200,{user:pick(u,['id','name','role']),csrf:session(req).csrf});}
   const u=requireUser(req);
+  if(path==='/api/audio/config' && req.method==='GET') return json(res,200,{enabled:dev && process.env.SEED_DEMO==='true' && process.env.FICTIONAL_AUDIO_DEMO==='true',source:'SYNTHETIC_TONE_V1',statement_version:'FICTIONAL_AUDIO_V1',statement:'I agree to a fictional generated-tone demonstration, with no microphone capture. Both sample participants must agree. The assigned physician reviews and releases the tone to the sample patient portal. Either participant can refuse or withdraw; this removes access and requests deletion. Audio expires after seven days. This is simulated consent, not consent for a real visit.'});
+  const ae=/^\/api\/encounters\/([^/]+)\/audio$/.exec(path);
+  if(ae){if(req.method==='GET')return json(res,200,audio.list(u,ae[1]));if(req.method==='POST')return json(res,201,audio.create(u,ae[1],await body(req,4096)));throw fail(405,'Method not allowed');}
+  const ar=/^\/api\/audio\/([^/]+)\/(consent|start|complete|stop|approve|publish|content|events)$/.exec(path);
+  if(ar){
+    const [,id,action]=ar;
+    if(action==='content' && req.method==='GET') {const download=url.searchParams.get('download')==='1';const f=audio.read(u,id,download);res.writeHead(200,{'Content-Type':f.mime,'Content-Length':f.data.length,'Content-Disposition':`${download?'attachment':'inline'}; filename="fictional-tone.wav"`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox"});return res.end(f.data);}
+    if(action==='events' && req.method==='GET')return json(res,200,audio.events(u,id));
+    if(['consent','start','complete','stop','approve','publish'].includes(action) && req.method==='POST'){const b=await body(req,4096);return json(res,200,action==='consent'?audio.consent(u,id,b):audio.action(u,id,action,b));}
+    throw fail(405,'Method not allowed');
+  }
+  const ad=/^\/api\/audio\/([^/]+)$/.exec(path);if(ad){if(req.method==='DELETE')return json(res,200,audio.action(u,ad[1],'delete'));throw fail(405,'Method not allowed');}
   if(path==='/api/logout'&&req.method==='POST'){const token=/\bclinic_session=([^;]+)/.exec(req.headers.cookie||'')?.[1];sessions.delete(createHmac('sha256',secret).update(token).digest('hex'));res.setHeader('Set-Cookie','clinic_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');return json(res,200,{ok:true});}
   if(path==='/api/dashboard'&&req.method==='GET'){
     const own=u.role==='PATIENT';const pid=own?u.patient_id:null;
@@ -83,5 +101,5 @@ async function api(req,res,url){
   const fm=/^\/api\/files\/([^/]+)$/.exec(path);if(fm&&req.method==='GET'){const f=db.prepare('SELECT * FROM files WHERE id=? AND org_id=?').get(fm[1],u.org_id);if(!f)throw fail(404,'File not found');patientAccess(u,f.patient_id);audit(db,u,'VIEW_FILE','file',f.id);res.writeHead(200,{'Content-Type':f.mime,'Content-Disposition':`attachment; filename="${f.filename.replace(/["\\\r\n]/g,'_')}"`,'X-Content-Type-Options':'nosniff','Cache-Control':'no-store'});return res.end(readFileSync(join(uploadDir,f.storage_key)));}
   throw fail(404,'Route not found');
 }
-const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(req.method!=='GET')throw fail(405,'Method not allowed');const assets={'/':'index.html','/app.js':'app.js','/style.css':'style.css'};const file=assets[url.pathname];if(!file)throw fail(404,'Not found');const mime=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(readFileSync(join(root,'public',file)));}catch(e){if(!res.headersSent)json(res,e.status||500,{error:e.status?e.message:'Internal server error',issues:e.issues||e.details});else res.end();if(!e.status)console.error(e);}});
-server.listen(port,host,()=>console.log(`ClinicCommand demo listening on http://${host}:${port}`));
+const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(req.method!=='GET')throw fail(405,'Method not allowed');const assets={'/':'index.html','/app.js':'app.js','/audio.js':'audio.js','/style.css':'style.css'};const file=assets[url.pathname];if(!file)throw fail(404,'Not found');const mime=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(readFileSync(join(root,'public',file)));}catch(e){if(!res.headersSent)json(res,e.status||500,{error:e.status?e.message:'Internal server error',issues:e.issues||e.details});else res.end();if(!e.status)console.error(e);}});
+server.listen(port,host,()=>console.log(`ClinicCommand demo listening on http://${host}:${server.address().port}`));

@@ -11,3 +11,7 @@ Run the app using the root README, then open the local URL. This demo is intende
 7. Sign in as `biller@example.test` to see the practice claim worklist, track a prior authorization request, record a denial or payment through the API, and create a draft appeal linked to a denial. Those records are manual demo entries, not imported payer responses.
 
 For a hosted fictional-data demonstration, isolate the environment, keep it separate from eventual production, restrict access, and avoid using any real identifiers or documents. There is no production user onboarding in this starter.
+
+## Durable synthetic audio walkthrough
+
+Before signing or checking out the seeded encounter, opt in with `FICTIONAL_AUDIO_DEMO=true`, `SEED_DEMO=true`, and `NODE_ENV=development`; keep the database and `AUDIO_DIR` on private persistent storage. Sign in as physician, open the encounter and create a fictional attempt. Agree as the physician, then sign in as patient and agree separately. Return to the physician encounter, refresh consent status, start and finish the synthetic attempt. Replay the generated tone, approve review, and release to the portal. The patient can replay/download it in **Files** or the encounter view, or withdraw consent to remove access and erase the file. Stop an unfinished attempt to discard it. No microphone is used, no real audio can be uploaded, and no speech service is connected. See [API.md](API.md) for authorization, expiry, audit and deletion rules. The Railway concept demo remains separate and keeps its synthetic sample only in browser memory.

@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "NODE_ENV=development node src/server.js",
     "demo:host": "node demo/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "audio:maintain": "node src/audio-maintenance.js"
   }
 }

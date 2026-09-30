@@ -13,7 +13,7 @@ set -a; . ./.env; set +a
 npm start
 ```
 
-Open `http://127.0.0.1:3000`. Requires Node 24 or later; `npm install` is unnecessary. `npm test` runs the billing gate tests. `SEED_DEMO=true` works only outside production and seeds fictional users:
+Open `http://127.0.0.1:3000`. Requires Node 24 or later; `npm install` is unnecessary. `npm test` runs billing, audio lifecycle, authorization, durability, and HTTP integration tests. `SEED_DEMO=true` works only outside production and seeds fictional users:
 
 | Role | Email | Password |
 | --- | --- | --- |
@@ -87,6 +87,24 @@ The public demo contains three fictional patient charts. Open **Patients** or **
 
 The Schedule demo accepts a broad visit type with **optional** additional details. Office injections and office surgery with local anesthesia use office days; surgery-center surgery uses Friday requests. Surgical slots require staff confirmation in the sample flow. These scheduling labels do not suggest billing codes.
 
-The fictional physician chart includes a **Dictation** draft for visit reason and steps taken. A microphone button appears only where browser speech recognition is available and after the user confirms they will use fictional information. Text can be typed or loaded from a sample on any phone. The transcript needs physician review; no real patient data belongs in the public demo. Browser recognition may use an external service, so production dictation needs a reviewed provider agreement and secure workflow.
+The public physician chart includes a typed **Dictation** draft for visit reason and steps taken, with a fixed fictional example. Microphone dictation and browser speech recognition are disabled. No external transcription service is connected. Physician review remains necessary; sample transcripts never automatically create codes or signed notes.
 
-The physician may review a structured dictation draft and, after separate **simulated** patient agreement and physician approval, record up to 60 seconds of fictional audio in browser memory. Staff can listen to the draft and release it to the fictional patient Files view for replay. This is not durable file storage, real consent, real authentication, or a HIPAA-ready recorder. See the [visit-audio design](docs/MPC_CARE_CRM.md).
+The public concept demo generates a one-second synthetic tone after separate **simulated** patient and physician approvals. It holds that tone only in browser memory and can release it to the fictional Files view. Reloading erases it. Role toggles are not authentication, and the concept demo never calls the durable audio API. The Railway start command remains `npm run demo:host`.
+
+## Server-backed synthetic visit audio
+
+The authenticated local app (`npm start`) now supports durable encounter-linked audio metadata in SQLite and private filesystem storage. **This feature generates a fixed tone, never records a person. It is not PHI-ready, real-patient recording, or legally sufficient consent.** Arbitrary audio uploads, microphone capture, additional participants and external transcription are unsupported. Only the seeded `enc-001` / `patient-001` / `doctor-001` specimen is allowed.
+
+To opt in, set `NODE_ENV=development`, `SEED_DEMO=true`, and `FICTIONAL_AUDIO_DEMO=true`. `AUDIO_DIR` defaults to `data/private-audio`; keep it and `DATABASE_PATH` on the same private persistent volume. Audio opt-in is rejected in production or without demo seeding. It defaults off. Existing SQLite databases gain additive audio tables when the app opens; existing chart/file rows are unchanged.
+
+1. Sign in as the physician, open **Patients → encounter**, and create a fictional audio attempt.
+2. Sign in as the sample patient, open that encounter, read the displayed simulated-consent statement and agree or refuse. Sign back in as physician and agree as that participant. Each decision records the authenticated actor, participant, server timestamp, statement version, and provenance. Neither account can consent for the other. Exactly those two fictional participants are supported.
+3. Start the synthetic attempt, then finish to save the generated tone as a private draft. **Stop** discards an unfinished attempt. No microphone starts at any stage. Unfinished starts expire after 60 seconds.
+4. Replay the draft, explicitly approve it as the assigned physician, then release it to the patient portal. Patients can see consent/status metadata and withdraw during review, but can play/download only a published tone. Billers, admins, other physicians, other patients and other organizations cannot access audio. Reassignment invalidates access to the earlier clinician-bound record.
+5. Refuse/withdraw or delete to revoke server access and erase the stored file. Withdrawal remains available after publication. Deletion retains a metadata tombstone, consent provenance and audit history. Previously downloaded copies cannot be recalled.
+
+See [API contract and state rules](docs/API.md) and [audio lifecycle implementation](src/audio.js). Metadata reads, consent decisions, lifecycle changes, playback/download requests, audit reads and deletion events are recorded without storing spoken content in logs. Playback events mean an authorized full-file request was served, not proof anyone listened. No range streaming or public storage URLs are provided.
+
+The fixed seven-day **demo** retention period starts when an attempt is created and cannot be extended by publication. Expired content is immediately inaccessible. Startup and a 30-second maintenance loop retry pending deletion, remove expired audio, and clean up interrupted starts. `npm run audio:maintain` runs the same retention/retry hook offline using the same environment and persistent paths. UUID-named unlinked files older than one minute are swept to cover a crash between file creation and metadata commit. Run a single server/maintenance owner per volume. If file deletion fails, a durable `DELETION_PENDING` tombstone blocks reads and retains the private key for retry.
+
+The private directory uses mode `0700`, files use `0600`, filenames are server-generated UUIDs, and SHA-256 verifies content before serving it. Files are flushed before committing metadata; failed database writes roll back and remove the new file. These files are **not application-encrypted**, and the demo has no storage key management, hardened session infrastructure, legal-consent review, clinical retention policy, backup erasure, or PHI security certification. Metadata/consent/audit tombstones remain until an operator resets the fictional dataset; the seven-day rule removes media, not those records. Do not deploy this workflow for real visits.
