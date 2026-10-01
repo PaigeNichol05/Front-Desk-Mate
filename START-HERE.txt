@@ -1,0 +1,39 @@
+FRONT DESK MATE — COMPLETED FICTIONAL DEMONSTRATION
+
+1. Extract this entire ZIP to a folder on your Mac or Windows computer.
+2. Install Node.js 24 or newer from https://nodejs.org/ if it is not installed.
+3. On Mac, open Start-Front-Desk-Mate.command.
+   On Windows, open Start-Front-Desk-Mate.bat.
+   The browser opens automatically. If it does not, copy the local address
+   printed in the launcher window into your browser.
+4. Keep the launcher window open. Ctrl+C stops the app.
+
+Demo accounts
+  Physician: doctor@example.test
+  Patient:   patient@example.test
+  Biller:    biller@example.test
+  Password:  DemoOnly!ChangeMe123
+
+Try the completed audio workflow BEFORE signing the sample encounter
+  Sign in as physician. Choose Patients, Open the encounter, then create
+  a fictional audio attempt and agree as the physician.
+  Sign out. Sign in as patient, open the encounter and agree separately.
+  Return as physician, refresh the status, start and finish the synthetic
+  attempt, replay the tone, approve it, then release it to the portal.
+  Sign in as patient and open Files to replay/download or withdraw consent.
+
+Files and sample metadata persist in this extracted folder across restarts.
+The launcher binds only to your own computer (127.0.0.1), chooses a free port,
+and does not require editing configuration or installing npm dependencies.
+The private data/ and uploads/ folders contain your local demo state.
+Do not share those folders. Downloaded copies cannot be recalled on withdrawal.
+
+This is a runnable development demonstration, not a clinical production EHR.
+No real patient information is permitted. Audio is a generated tone: no
+microphone capture, actual visit recordings, or external transcription.
+Billing codes are manual specimens and claims are never sent to insurers.
+Real clinical/payer use requires the work documented in PRODUCTION_READINESS.md.
+
+The public Railway concept preview is a separate browser-only walkthrough.
+This package includes the authenticated server-backed application.
+Read README.md and docs/API.md for the implemented features and boundaries.

@@ -11,6 +11,7 @@
     "dev": "NODE_ENV=development node src/server.js",
     "demo:host": "node demo/server.js",
     "test": "node --test",
-    "audio:maintain": "node src/audio-maintenance.js"
+    "audio:maintain": "node src/audio-maintenance.js",
+    "demo:complete": "node scripts/start-demo.js"
   }
 }

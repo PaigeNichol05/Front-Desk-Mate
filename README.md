@@ -4,6 +4,10 @@ A runnable, dependency-free Node 24 and SQLite starter for one unified patient/p
 
 **Front Desk Mate** is the patient-facing product name. “Managing patient care” describes its purpose, not its name. The existing repository and Railway demo address remain in place. See the [care CRM, scheduling, reminders and on-call design](docs/MPC_CARE_CRM.md). The public demo simulates these features; the local API does not yet implement the new booking, reminder or chatbot services.
 
+## Open the completed fictional demonstration
+
+With Node.js 24+ installed, double-click `Start-Front-Desk-Mate.command` on Mac or `Start-Front-Desk-Mate.bat` on Windows. Alternatively run `npm run demo:complete`. The launcher opens the authenticated app, enables the fixed synthetic-audio specimen, selects an available local port, and preserves files/database in this project folder. It binds only to `127.0.0.1`; no configuration editing or npm dependency install is required. Keep its terminal open during use. See `START-HERE.txt` for accounts and the physician/patient walkthrough. The launcher is strictly for local fictional demonstrations and is not a hosted production configuration.
+
 ## Run locally
 
 ```bash
