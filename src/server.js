@@ -9,6 +9,7 @@ import { createAudioService } from './audio.js';
 const root=resolve(import.meta.dirname,'..');
 const db=openDb(resolve(root,process.env.DATABASE_PATH||'data/clinic.db'));
 const dev=process.env.NODE_ENV!=='production';
+const secureCookies=!dev||process.env.COOKIE_SECURE==='true';
 if(process.env.SEED_DEMO==='true') {
   if(!dev) throw new Error('Demo seeding is forbidden in production');
   seed(db);
@@ -41,7 +42,7 @@ async function api(req,res,url){
     if(!match)throw fail(401,'Invalid credentials');
     const token=randomBytes(32).toString('hex'),key=createHmac('sha256',secret).update(token).digest('hex');
     const csrf=randomBytes(24).toString('hex');sessions.set(key,{userId:u.id,csrf,expires:Date.now()+8*3600000});
-    res.setHeader('Set-Cookie',`clinic_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${dev?'':'; Secure'}`);
+    res.setHeader('Set-Cookie',`clinic_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${secureCookies?'; Secure':''}`);
     return json(res,200,{user:pick(u,['id','name','role']),csrf});
   }
   if(path==='/api/session'&&req.method==='GET') {const u=requireUser(req);return json(res,200,{user:pick(u,['id','name','role']),csrf:session(req).csrf});}
@@ -101,5 +102,5 @@ async function api(req,res,url){
   const fm=/^\/api\/files\/([^/]+)$/.exec(path);if(fm&&req.method==='GET'){const f=db.prepare('SELECT * FROM files WHERE id=? AND org_id=?').get(fm[1],u.org_id);if(!f)throw fail(404,'File not found');patientAccess(u,f.patient_id);audit(db,u,'VIEW_FILE','file',f.id);res.writeHead(200,{'Content-Type':f.mime,'Content-Disposition':`attachment; filename="${f.filename.replace(/["\\\r\n]/g,'_')}"`,'X-Content-Type-Options':'nosniff','Cache-Control':'no-store'});return res.end(readFileSync(join(uploadDir,f.storage_key)));}
   throw fail(404,'Route not found');
 }
-const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(req.method!=='GET')throw fail(405,'Method not allowed');const assets={'/':'index.html','/app.js':'app.js','/audio.js':'audio.js','/style.css':'style.css'};const file=assets[url.pathname];if(!file)throw fail(404,'Not found');const mime=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(readFileSync(join(root,'public',file)));}catch(e){if(!res.headersSent)json(res,e.status||500,{error:e.status?e.message:'Internal server error',issues:e.issues||e.details});else res.end();if(!e.status)console.error(e);}});
+const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);if(url.pathname==='/health'&&req.method==='GET'){db.prepare('SELECT 1').get();return json(res,200,{ok:true,fictional_demo:true});}if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(req.method!=='GET')throw fail(405,'Method not allowed');const assets={'/':'index.html','/app.js':'app.js','/audio.js':'audio.js','/style.css':'style.css'};const file=assets[url.pathname];if(!file)throw fail(404,'Not found');const mime=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(readFileSync(join(root,'public',file)));}catch(e){if(!res.headersSent)json(res,e.status||500,{error:e.status?e.message:'Internal server error',issues:e.issues||e.details});else res.end();if(!e.status)console.error(e);}});
 server.listen(port,host,()=>console.log(`ClinicCommand demo listening on http://${host}:${server.address().port}`));

@@ -54,3 +54,10 @@ test('neither UI invokes microphone or external speech recognition; deployment s
   assert.match(readFileSync('railway.json','utf8'),/demo:host/);
   assert.match(readFileSync('public/app.js','utf8'),/mountAudio/);
 });
+
+test('hosted fictional demo sets Secure cookies and exposes only a minimal readiness check',async t=>{
+  const {request}=await start(t,{COOKIE_SECURE:'true'});
+  const health=await request('/health');assert.equal(health.status,200);assert.deepEqual(await health.json(),{ok:true,fictional_demo:true});
+  const login=await request('/api/login',{method:'POST',body:{email:'doctor@example.test',password:'DemoOnly!ChangeMe123'}});
+  assert.equal(login.status,200);assert.match(login.headers.get('set-cookie'),/; Secure/);assert.match(login.headers.get('set-cookie'),/HttpOnly/);assert.match(login.headers.get('set-cookie'),/SameSite=Strict/);
+});
