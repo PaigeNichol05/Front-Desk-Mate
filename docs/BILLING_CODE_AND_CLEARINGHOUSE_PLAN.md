@@ -94,3 +94,7 @@ Reviewed October 4, 2026; revalidate before implementation and whenever source v
 - [CMS physician assistants](https://www.cms.gov/medicare/payment/fee-schedules/physician-fee-schedule/advanced-practice-non-physician-practitioners/physician-assistants-pas)
 - [UnitedHealthcare claims, billing and payments](https://www.uhcprovider.com/en/claims-payments-billing.html)
 - [Aetna disputes and appeals overview](https://www.aetna.com/health-care-professionals/disputes-appeals/disputes-appeals-overview.html)
+
+## Owner clarification: internal denial workflow
+
+Denial records, correction packets, and resubmission forms are internal staff workflows; do not display them in the patient portal. The patient-facing view may show a general billing-progress message without the denial reason or internal event history. This concerns the application display, not notices an insurer sends independently. The desired production workflow auto-populates the verified payer form and can submit reviewed corrected information through an authorized connector, with idempotency and receipts. Do not silently reinterpret a denial as a new original claim or an appeal. Missing evidence and unknown submission rules remain holds.

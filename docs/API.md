@@ -11,8 +11,10 @@ Login `POST /api/login`, session `GET /api/session`, logout `POST /api/logout`. 
 | `POST /api/encounters/:id/checkout` | Assigned physician | Validate and queue exactly one claim |
 | `GET/POST /api/suggestions` | All read; practice staff write | Manual candidate codes with rationale |
 | `GET/POST /api/authorizations` | All read; biller/admin write | Track requests; approval update is intentionally absent |
-| `GET /api/claims`, `/claims/:id/events` | All | Role-filtered claims and history |
-| `GET/POST /api/claims/:id/denials`, `/payments` | All read; biller/admin write | Record payer outcomes and payments |
+| `GET /api/claims` | All | Role-filtered claims; patient status is the generic `PRACTICE_PROCESSING` |
+| `GET /api/claims/:id/events` | Practice staff | Internal claim history |
+| `GET/POST /api/claims/:id/denials` | Practice staff read; biller/admin write | Internal denial records; patients receive 403 |
+| `GET/POST /api/claims/:id/payments` | All authorized read; biller/admin write | Recorded payments |
 | `POST /api/appeals` | Biller/admin | Draft appeal linked to denial |
 | `GET/POST /api/files`, `GET /api/files/:id` | Authorized chart users | Upload and fetch PNG/JPEG/PDF, max 4 MB |
 
@@ -48,3 +50,5 @@ Metadata includes source, encounter/patient/clinician/creator IDs, state, MIME, 
 Seven-day retention starts at creation, not publication. Expiry immediately denies reads, even before the sweep. Refusal/withdrawal/deletion commits `DELETION_PENDING` before touching disk; storage failures remain inaccessible and retryable. Successful erasure records a tombstone (`REFUSED`, `STOPPED`, or `DELETED`); retry sweeps finalize as `DELETED` with the original deletion reason. Metadata, consent provenance and audit history remain in SQLite; media erasure does not delete those records or remote copies/backups. Startup and every 30 seconds while enabled run the retention hook; `npm run audio:maintain` can run it offline with the same nonproduction opt-in and persistent paths. Interrupted starts older than 60 seconds are swept. UUID-named orphan files older than a minute are removed, covering a crash before metadata commit. Use one owner per volume.
 
 Private storage is `AUDIO_DIR` (default `data/private-audio`) with directory mode 0700 and file mode 0600, outside served assets. It needs a persistent volume for restart durability; ephemeral hosts lose both SQLite and files. This is not encrypted clinical storage or a PHI-ready authorization/consent/retention design. The public `demo/` server and its role toggle never call these endpoints; Railway continues to run that separate concept demo.
+
+Internal denial/event endpoints are staff-only even for the claim’s own patient. Patient claim lists return a generic workflow status and the patient UI requests only recorded payments for claim details. This hides internal correction workflows in the app; it is not a restriction on communications an insurer may send to a member. No real resubmission endpoint or payer-form connector is implemented.

@@ -61,3 +61,16 @@ test('hosted fictional demo sets Secure cookies and exposes only a minimal readi
   const login=await request('/api/login',{method:'POST',body:{email:'doctor@example.test',password:'DemoOnly!ChangeMe123'}});
   assert.equal(login.status,200);assert.match(login.headers.get('set-cookie'),/; Secure/);assert.match(login.headers.get('set-cookie'),/HttpOnly/);assert.match(login.headers.get('set-cookie'),/SameSite=Strict/);
 });
+
+test('patient billing responses exclude denial status and internal denial/event records',async t=>{
+  const {request,login}=await start(t),doctor=await login('doctor@example.test'),biller=await login('biller@example.test'),patient=await login('patient@example.test');
+  for(const kind of ['ASSESSMENT','PLAN'])assert.equal((await request('/api/encounters/enc-001/sections',{user:doctor,method:'POST',body:{kind,content:'Fictional test documentation'}})).status,201);
+  assert.equal((await request('/api/encounters/enc-001/sign',{user:doctor,method:'POST',body:{}})).status,200);
+  const result=await request('/api/encounters/enc-001/checkout',{user:doctor,method:'POST',body:{lines:[{procedure_system:'CPT',procedure_code:'99213',diagnosis_code:'M54.50',units:1,charge_cents:15000}]}});assert.equal(result.status,201);const claim=await result.json();
+  const denial=await request(`/api/claims/${claim.id}/denials`,{user:biller,method:'POST',body:{reason:'Private sample denial reason'}});assert.equal(denial.status,201);
+  const publicClaims=await (await request('/api/claims',{user:patient})).json();assert.equal(publicClaims[0].status,'PRACTICE_PROCESSING');assert.doesNotMatch(JSON.stringify(publicClaims),/DENIED|Private sample denial reason/);
+  for(const resource of ['denials','events'])assert.equal((await request(`/api/claims/${claim.id}/${resource}`,{user:patient})).status,403);
+  assert.equal((await request(`/api/claims/${claim.id}/payments`,{user:patient})).status,200);
+  assert.equal((await request(`/api/claims/${claim.id}/denials`,{user:biller})).status,200);
+  assert.equal((await (await request('/api/claims',{user:biller})).json())[0].status,'DENIED');
+});
