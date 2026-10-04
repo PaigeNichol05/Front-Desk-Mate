@@ -33,3 +33,9 @@ The clinician draft includes reason, findings, assessment, services/actions, pla
 ## Portal landing page
 
 The preview opens on Today, with Doctor portal and Patient portal labels selected by the role control. Documents holds the chart files and any simulated denial history. Denials & resubmissions is a staff navigation item rather than the first page; patients see only their sample claim status and own document cards, not the staff correction form.
+
+## Assessment-to-plan draft concept
+
+After check-in, rooming, and provider assessment, load the fixed fictional dictation example. **Generate fictional care-plan draft** creates an unsigned fixed specimen linked to that sample assessment; **Review and copy draft to plan field** copies it for editing. A changed assessment invalidates the generated draft. Neither action signs the encounter or records the completed clinical plan milestone. The sample plan leaves management details and timing for clinician completion. Arbitrary assessments are unsupported; no real transcript, microphone, transcription, AI model, or treatment inference is connected.
+
+Production requirement: with documented participant consent and an approved protected recording/transcription/AI arrangement, retain the assessment source/version, generate an evidence-linked draft with missing details flagged, and require the qualified rendering clinician to review, edit, and approve it before publication/signing. Never invent findings, care performed, medications, or unsupported clinical decisions. Provider/plan changes invalidate relevant review.
