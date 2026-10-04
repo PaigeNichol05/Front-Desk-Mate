@@ -87,6 +87,8 @@ The [billing code and clearinghouse plan](docs/BILLING_CODE_AND_CLEARINGHOUSE_PL
 
 Priority: durable authentication and migrations; appointments/check-in and patient intake; coded terminology and professional review controls; eligibility and prior authorization connector; claims clearinghouse worker and webhook inbox; remittance reconciliation; appeal submission and document packages; full document imaging, comparison, communication, and clinical decision support. AI output should stay reviewable and attributable to a human professional.
 
+The billing plan also specifies denial correction with authorized patient-chart search, source-linked evidence, payer/plan-specific official forms or electronic workflows, missing-documentation tasks for the clinician, reviewed resubmission packets, and approved preventive checks. These retrieval/form-filling features are not implemented in the current fictional demo; missing facts must never be generated as clinical evidence.
+
 ## Multi-patient demo and clinician handoff
 
 The public demo contains three fictional patient charts. Open **Patients** or **Care board** to switch charts, then **Schedule** to book and review the physician handoff. The physician can keep an eligible follow-up or reassign it to a sample PA or NP. The patient view hides both clinician name and role until the appointment day. Staff can use **Preview appointment day** in the fictional walkthrough. The physician can record a sample care plan from the chart. These browser-only controls are not production access control or clinical credential checks. See [care CRM specification](docs/MPC_CARE_CRM.md).
