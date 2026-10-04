@@ -29,3 +29,7 @@ Select Physician or Medical assistant and open Patients. Record check-in, then t
 The concept navigation now includes **Denials & resubmissions**, embedding the fixed Jordan Sample case with a visible denial record and prefilled reconsideration-form preview before chart search. The preview is not an official payer form and cannot transmit. Simulated claim denials also appear in the selected chart’s Files screen until reset. In Messages/Inbox, enter fictional text in **Write a question for the doctor**; the physician can acknowledge the request in Inbox. No live AI, messaging, or server persistence is provided for these concept controls.
 
 The clinician draft includes reason, findings, assessment, services/actions, plan, follow-up, and optional relevant history/prior treatment, procedure detail, and actual time fields. The core draft checklist checks presence only. It does not establish billing-code support or insurer acceptance. Final draft saving requires the provider-seen milestone and the sample core fields. Real code/service/payer requirements need a licensed, verified integration.
+
+## Portal landing page
+
+The preview opens on Today, with Doctor portal and Patient portal labels selected by the role control. Documents holds the chart files and any simulated denial history. Denials & resubmissions is a staff navigation item rather than the first page; patients see only their sample claim status and own document cards, not the staff correction form.
