@@ -18,6 +18,20 @@ Display these separately:
 
 Exact CPT content requires appropriate AMA licensing for the intended electronic product and distribution. A development license is not assumed to permit public or production distribution. Use official dated ICD-10-CM and HCPCS sources within their terms, and separately licensed coding guidance where necessary. Do not scrape or bundle copyrighted catalogs from websites. Payer wording comes from that payer's applicable policy; there is no universal insurer wording that ensures payment. Preserve provenance and comply with the source's permitted display rights.
 
+## Office specialties and clinician profiles
+
+The product must be configurable per practice and location, with multiple specialties supported in the same organization. Start with orthopedics and pain management as requested, and make specialty templates extensible. Specialty configuration controls relevant code search filters, favorites, documentation templates, and review checklists; it does not change an official code descriptor or establish coverage. Unsupported specialties or unverified rules must be labeled as such rather than claiming universal office support.
+
+Create a profile for each physician (MD/DO), nurse practitioner (NP), and physician assistant (PA). Store individual NPI, professional role, taxonomy/specialties, practice locations, state licensure/scope information, payer enrollment/credentialing, and effective dates. Track group/billing entity identifiers separately. A profile is not proof of credentialing; verification provenance and review are required.
+
+Each encounter/claim must identify the actual rendering clinician, billing entity/practitioner, and supervising clinician when applicable. Changing the rendering clinician triggers a new provider/payer review and invalidates earlier readiness checks. Do not substitute a physician NPI merely because an NP or PA works in the office. Do not assign a different service code solely because the clinician is an NP or PA: select the code for the documented service, then evaluate provider eligibility, applicable billing arrangement, modifiers, supervision/documentation, and payer rules.
+
+Direct billing, incident-to, and split/shared arrangements require distinct, service-date and payer-specific rule checks. Do not infer eligibility from a role selection or physician signature. Capture the required evidence and hold unresolved cases for a qualified reviewer. Medicare rules must not be applied automatically to commercial insurers or other settings. Keep provider-rule versions and reviewer decisions with the submitted claim snapshot.
+
+For example, an orthopedic office can prioritize its relevant service templates while a pain-management office uses different templates. The same pain-management service performed by a physician, NP, or PA still requires review of that specific clinician's eligibility, the documented service, setting, and insurer policy. The app must explain which checks changed when the clinician changes, without promising a particular code or reimbursement result.
+
+Practice customization is permission-controlled and audited. Templates may add internal guidance but cannot override authoritative code meanings or mandatory payer requirements. Separate organizations cannot read each other's clinician profiles, credentials, settings, or claim data.
+
 ## Pre-submission review
 
 Validate applicable eligibility for the service date, provider identity/enrollment, member and payer routing identifiers, code validity, diagnosis support, modifiers, units, place of service, authorization, required documents, and filing deadlines. Apply relevant code-pair and unit edits with versioned sources. Medicare NCCI rules are not automatically the rules for every commercial payer. Record exceptions and professional review rather than labeling unknown checks as passed.
@@ -37,6 +51,8 @@ Show distinct states: queued locally, transmitted, clearinghouse rejected/accept
 ## Acceptance tests for implementation
 
 - Correct service-date catalog/policy version and exact authorized descriptor; unknown/deleted code and missing licensed content never appear verified.
+- Orthopedics, pain management, and mixed-specialty offices use isolated, configurable templates; internal customization never replaces authoritative descriptors.
+- Physician, NP, and PA profiles retain separate rendering/billing identities; changed clinicians or expired/unverified credentials trigger review. Incident-to and split/shared arrangements require applicable evidence, not a role-based default.
 - Different payer/plan rules remain separate; unavailable or outdated policy produces a review hold.
 - Documentation, modifier, units, authorization, and applicable edit failures block production submission; review is attributable and auditable.
 - Staff-only configuration/review/submission with organization boundaries; no credentials in responses or logs; fictional demo cannot reach production transport.
@@ -53,3 +69,5 @@ Reviewed October 4, 2026; revalidate before implementation and whenever source v
 - [Stedi professional claim submission](https://www.stedi.com/docs/healthcare/submit-professional-claims)
 - [Stedi acknowledgments and remittances](https://www.stedi.com/docs/healthcare/claim-responses-overview)
 - [Stedi test claim workflows](https://www.stedi.com/docs/healthcare/test-claims-workflow)
+- [CMS advanced practice registered nurses](https://www.cms.gov/medicare/payment/fee-schedules/physician-fee-schedule/advanced-practice-non-physician-practitioners/advanced-practice-registered-nurses-aprns)
+- [CMS physician assistants](https://www.cms.gov/medicare/payment/fee-schedules/physician-fee-schedule/advanced-practice-non-physician-practitioners/physician-assistants-pas)
