@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {initialWorkflow,chartSearch,packet,transition} from '../demo/billing-workflow.js';
+test('sample chart search excludes other patients and patient role',()=>{const s=initialWorkflow();assert.ok(chartSearch(s).every(d=>d.patient==='sample-01'));s.role='PATIENT';assert.throws(()=>chartSearch(s));});
+test('sample packet needs clinician evidence and selection before billing review',()=>{let s=initialWorkflow();assert.throws(()=>packet(s));s=transition(s,'search');s=transition(s,'task');assert.throws(()=>transition(s,'addendum'));s.role='PHYSICIAN';s=transition(s,'addendum');assert.throws(()=>packet(s));s.role='BILLER';s=transition(s,'prepare');s=transition(s,'review');assert.equal(s.reviewed,true);const p=packet(s);assert.equal(p.status,'DRAFT — NOT SUBMITTED');assert.ok(p.attachments.some(d=>d.id==='addendum-01'));assert.ok(p.attachments.every(d=>d.id!=='other-01'));s.selected=s.selected.filter(x=>x!=='addendum-01');assert.throws(()=>packet(s));});
