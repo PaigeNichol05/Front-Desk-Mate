@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path';
 const root=resolve(import.meta.dirname,'..');
 const files={'/':['demo/index.html','text/html; charset=utf-8'],'/app.js':['demo/app.js','text/javascript; charset=utf-8'],'/style.css':['public/style.css','text/css; charset=utf-8']};
 files['/billing-demo']=['demo/billing-demo.html','text/html; charset=utf-8'];
+files['/billing-entry.js']=['demo/billing-entry.js','text/javascript; charset=utf-8'];
 files['/billing-demo.js']=['demo/billing-demo.js','text/javascript; charset=utf-8'];
 files['/billing-workflow.js']=['demo/billing-workflow.js','text/javascript; charset=utf-8'];
 const server=http.createServer((req,res)=>{

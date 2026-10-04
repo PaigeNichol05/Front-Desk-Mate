@@ -124,3 +124,5 @@ The separate authenticated demonstration uses `railway-app-demo.json`; the origi
 ## Fictional denial-correction walkthrough
 
 With `npm run demo:host`, open `/billing-demo`. The fixed pain-management/spine scenario lets billing staff search Jordan Sample’s chart, create a missing-evidence task, switch to the assigned physician to load a fictional dated addendum, and prepare/review a packet. Another sample patient’s document is excluded. Rendering-provider or attachment changes reset packet review. No official code catalog, payer policy, real form, OCR, or transmission is connected. The packet is an app-generated preview, not an official insurer form or submission. Browser roles are not authentication. Reload resets all steps.
+
+The concept walkthrough also includes **Denials & resubmissions** in its main navigation, a visible fictional form preview, simulated denial history in Files, written sample clinician requests, and billing-documentation draft prompts. Q&A remains scripted; no live AI, official payer form, or real resubmission is connected. Visit completion follows check-in, rooming, provider assessment, plan, signing, and checkout.
