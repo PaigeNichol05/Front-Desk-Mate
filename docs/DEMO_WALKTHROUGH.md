@@ -19,3 +19,7 @@ Before signing or checking out the seeded encounter, opt in with `FICTIONAL_AUDI
 ## Denial correction concept
 
 Open `/billing-demo` on the concept server. As Billing staff select **Search Jordan’s sample chart**, then **Request missing documentation**. Switch to Assigned physician and **Load reviewed fictional addendum**. Switch back to Billing staff, **Prepare sample packet**, and **Mark packet reviewed**. Deselect the addendum to see the evidence hold; change provider to reset packet review; switch to Patient to see the limited status view. All policies and data are fictional fixtures, not live insurer requirements. No resubmission occurs.
+
+## Visit order in the concept preview
+
+Select Physician or Medical assistant and open Patients. Record check-in, then taken back/rooming. The physician records provider assessment, assessment documentation, and the visit care plan, then signs and checks out after billing review. Care-plan completion and reviewed visit-draft saving are disabled before the provider-seen milestone; an MA cannot complete or sign the clinical plan. Pre-visit preparation is separate from documenting completed care. These browser milestones are simulated; the authenticated API does not yet persist or enforce this arrival workflow, and role switching is not authentication.
