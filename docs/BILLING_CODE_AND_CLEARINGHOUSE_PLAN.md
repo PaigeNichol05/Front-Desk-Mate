@@ -98,3 +98,16 @@ Reviewed October 4, 2026; revalidate before implementation and whenever source v
 ## Owner clarification: internal denial workflow
 
 Denial records, correction packets, and resubmission forms are internal staff workflows; do not display them in the patient portal. The patient-facing view may show a general billing-progress message without the denial reason or internal event history. This concerns the application display, not notices an insurer sends independently. The desired production workflow auto-populates the verified payer form and can submit reviewed corrected information through an authorized connector, with idempotency and receipts. Do not silently reinterpret a denial as a new original claim or an appeal. Missing evidence and unknown submission rules remain holds.
+
+## Pre-service financial responsibility and patient acknowledgment
+
+Requested feature: explain the proposed service and expected patient cost before it is performed, and retain an attributable acknowledgment. Do not implement a blanket promise that the patient pays every insurer denial. Patient liability depends on the coverage/program, provider agreement, service setting, applicable federal/state rules, and valid service-specific notice when required. A signature must not override nonwaivable protections or turn every contractual adjustment into patient debt.
+
+For production, verify the practice state, facility/office setting, network status, payer/program, service, and service date. Show the estimate basis, expected allowable amount when known, estimated deductible/copay/coinsurance, and specifically identified noncovered services with the coverage concern explained. Flag unknown amounts rather than asserting a guaranteed insurance payment or patient balance. Select the correct current official notice where applicable: Original Medicare ABN, uninsured/self-pay good faith estimate, or legally available No Surprises Act notice-and-consent procedure. These documents have different purposes and are not interchangeable. Do not offer a surprise-billing waiver when consent is legally unavailable, including protected ancillary services in applicable settings.
+
+Retain the exact form/estimate version, service scope, delivery time, patient/authorized representative identity, choices, signature provenance, interpreter/accessibility support, and a patient copy. Changes in service/cost require applicable updated disclosure rather than silently extending an earlier signature. After adjudication, classify patient responsibility separately from contractual/provider write-offs and unresolved correction/appeal balances; do not automatically debit or invoice every denied amount. Practice-specific language and rules need qualified contract/legal review before real use. The demo has no enforceable financial waiver or electronic signature implementation.
+
+Primary references reviewed October 4, 2026:
+- [CMS patient rights when using insurance and notice/consent limits](https://www.cms.gov/initiatives/your-patient-rights/medical-bill-rights/know-your-rights/insurance)
+- [CMS Original Medicare ABN](https://www.cms.gov/medicare/forms-notices/beneficiary-notices-initiative/ffs-abn)
+- [CMS good faith estimates for uninsured/self-pay patients](https://www.cms.gov/initiatives/your-patient-rights/medical-bill-rights/know-your-rights/without-insurance)
