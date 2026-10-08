@@ -74,3 +74,16 @@ test('patient billing responses exclude denial status and internal denial/event 
   assert.equal((await request(`/api/claims/${claim.id}/denials`,{user:biller})).status,200);
   assert.equal((await (await request('/api/claims',{user:biller})).json())[0].status,'DENIED');
 });
+
+test('scheduling HTTP endpoints enforce login, CSRF and patient restrictions',async t=>{
+ const {request,login}=await start(t),doctor=await login('doctor@example.test'),patient=await login('patient@example.test');
+ const payload={patient_id:'patient-001',clinician_id:'doctor-001',starts_at:new Date(Date.now()+14*86400000).toISOString(),duration_minutes:30,visit_type:'Follow-up'};
+ assert.equal((await request('/api/appointments')).status,401);
+ assert.equal((await request('/api/appointments',{user:patient})).status,403);
+ assert.equal((await request('/api/appointments',{user:doctor,method:'POST',body:payload,csrf:false})).status,403);
+ const response=await request('/api/appointments',{user:doctor,method:'POST',body:payload});assert.equal(response.status,201);const a=await response.json();
+ assert((await(await request('/api/appointments',{user:doctor})).json()).some(x=>x.id===a.id));
+ assert.equal((await request(`/api/appointments/${a.id}/check-in`,{user:patient,method:'POST'})).status,403);
+ const checkin=await request(`/api/appointments/${a.id}/check-in`,{user:doctor,method:'POST'});assert.equal(checkin.status,200);const e=await checkin.json();assert(e.encounter_id);
+ assert.equal((await request(`/api/appointments/${a.id}/check-in`,{user:doctor,method:'POST'})).status,409);
+});

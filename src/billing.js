@@ -32,6 +32,7 @@ export function checkout(db, user, encounterId, lines) {
     db.prepare('INSERT INTO claims VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(claimId,user.org_id,encounterId,patient.id,patient.payer_name,patient.member_id,'AWAITING_CONNECTOR',lines.reduce((a,x)=>a+x.units*x.charge_cents,0),null,timestamp,timestamp);
     for(const l of lines) db.prepare('INSERT INTO claim_lines VALUES (?,?,?,?,?,?,?,?,?)').run(uid(),claimId,l.procedure_system||'CPT',l.procedure_code,l.modifier||null,l.diagnosis_code,l.units,l.charge_cents,l.authorization_id||null);
     db.prepare("UPDATE encounters SET status='CHECKED_OUT',checked_out_at=? WHERE id=?").run(timestamp,encounterId);
+    if(encounter.appointment_id) db.prepare("UPDATE appointments SET status='COMPLETED' WHERE id=? AND org_id=?").run(encounter.appointment_id,user.org_id);
     db.prepare('INSERT INTO claim_events VALUES (?,?,?,?,?)').run(uid(),claimId,'QUEUED','Validated at checkout; awaiting configured clearinghouse connector. No payer transmission has occurred.',timestamp);
     audit(db,user,'CHECKOUT','claim',claimId);
     db.exec('COMMIT');

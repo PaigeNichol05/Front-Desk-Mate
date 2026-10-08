@@ -5,9 +5,11 @@ import { randomBytes, timingSafeEqual, scryptSync, createHmac } from 'node:crypt
 import { openDb, seed, uid, now, audit } from './db.js';
 import { checkout, documentationChecks } from './billing.js';
 import { createAudioService } from './audio.js';
+import { createScheduling } from './scheduling.js';
 
 const root=resolve(import.meta.dirname,'..');
 const db=openDb(resolve(root,process.env.DATABASE_PATH||'data/clinic.db'));
+const scheduling=createScheduling(db);
 const dev=process.env.NODE_ENV!=='production';
 const secureCookies=!dev||process.env.COOKIE_SECURE==='true';
 if(process.env.SEED_DEMO==='true') {
@@ -47,6 +49,21 @@ async function api(req,res,url){
   }
   if(path==='/api/session'&&req.method==='GET') {const u=requireUser(req);return json(res,200,{user:pick(u,['id','name','role']),csrf:session(req).csrf});}
   const u=requireUser(req);
+  if(path==='/api/scheduling/options'&&req.method==='GET') {
+    requireUser(req,['PHYSICIAN','BILLER','ADMIN']);
+    return json(res,200,{visit_types:scheduling.types,clinicians:db.prepare("SELECT id,name FROM users WHERE org_id=? AND role='PHYSICIAN' AND active=1 ORDER BY name").all(u.org_id)});
+  }
+  if(path==='/api/appointments') {
+    if(req.method==='GET')return json(res,200,scheduling.list(u));
+    if(req.method==='POST')return json(res,201,scheduling.save(u,await body(req,4096)));
+    throw fail(405,'Method not allowed');
+  }
+  const appointmentRoute=/^\/api\/appointments\/([^/]+)(?:\/(cancel|check-in|room))?$/.exec(path);
+  if(appointmentRoute) {
+    if(req.method==='PATCH'&&!appointmentRoute[2])return json(res,200,scheduling.save(u,await body(req,4096),appointmentRoute[1]));
+    if(req.method==='POST'&&appointmentRoute[2])return json(res,200,scheduling.transition(u,appointmentRoute[1],appointmentRoute[2]));
+    throw fail(405,'Method not allowed');
+  }
   if(path==='/api/audio/config' && req.method==='GET') return json(res,200,{enabled:dev && process.env.SEED_DEMO==='true' && process.env.FICTIONAL_AUDIO_DEMO==='true',source:'SYNTHETIC_TONE_V1',statement_version:'FICTIONAL_AUDIO_V1',statement:'I agree to a fictional generated-tone demonstration, with no microphone capture. Both sample participants must agree. The assigned physician reviews and releases the tone to the sample patient portal. Either participant can refuse or withdraw; this removes access and requests deletion. Audio expires after seven days. This is simulated consent, not consent for a real visit.'});
   const ae=/^\/api\/encounters\/([^/]+)\/audio$/.exec(path);
   if(ae){if(req.method==='GET')return json(res,200,audio.list(u,ae[1]));if(req.method==='POST')return json(res,201,audio.create(u,ae[1],await body(req,4096)));throw fail(405,'Method not allowed');}

@@ -130,3 +130,7 @@ The concept walkthrough also includes **Denials & resubmissions** in its main na
 The concept also demonstrates an **assessment-to-care-plan draft** from one fixed fictional assessment, with source matching, explicit clinician review, and separate signing. It does not process recorded assessments or use live AI; real transcription and clinical drafting remain production requirements.
 
 Visit activities in the concept support multiple independent selections. Denial records and forms are staff-only; patient claim-list API responses use a generic workflow status and deny access to internal denial/event endpoints. The sample correction form auto-fills fixed fields and supports a reviewed **simulated** resubmission receipt. Real automatic resubmission is not connected.
+
+## Saved scheduling and check-in update
+
+The authenticated app now includes **Scheduling**, **Check-In**, **Documentation**, and **Messages** navigation, plus patient search by name/MRN on every signed-in page. Scheduling saves appointment changes, blocks clinician/patient overlaps, preserves cancellations and records audit events. Check-in creates a linked encounter; checkout completes its appointment and leaves the claim awaiting a real connector. Use only fictional data. This does not update the separate public concept demo or establish HIPAA readiness. See [current implementation and launch blockers](docs/LAUNCH_STATUS_2026-10-08.md).
