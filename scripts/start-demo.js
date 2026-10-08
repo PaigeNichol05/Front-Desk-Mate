@@ -6,7 +6,7 @@ const root=resolve(import.meta.dirname,'..');
 if(Number(process.versions.node.split('.')[0])<24){console.error('Front Desk Mate requires Node.js 24 or newer. Install it from https://nodejs.org/ and reopen the launcher.');process.exit(1)}
 const child=spawn(process.execPath,['src/server.js'],{
   cwd:root,
-  env:{...process.env,NODE_ENV:'development',SEED_DEMO:'true',FICTIONAL_AUDIO_DEMO:'true',SESSION_SECRET:randomBytes(48).toString('hex'),HOST:'127.0.0.1',PORT:'0',DATABASE_PATH:resolve(root,'data/clinic.db'),UPLOAD_DIR:resolve(root,'uploads'),AUDIO_DIR:resolve(root,'data/private-audio')},
+  env:{...process.env,NODE_ENV:'development',SEED_DEMO:'true',FICTIONAL_AUDIO_DEMO:'true',FICTIONAL_CLEARINGHOUSE_DEMO:'true',SESSION_SECRET:randomBytes(48).toString('hex'),HOST:'127.0.0.1',PORT:'0',DATABASE_PATH:resolve(root,'data/clinic.db'),UPLOAD_DIR:resolve(root,'uploads'),AUDIO_DIR:resolve(root,'data/private-audio')},
   stdio:['inherit','pipe','inherit']
 });
 console.log('Front Desk Mate · completed fictional demonstration');

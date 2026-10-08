@@ -11,9 +11,9 @@ Login `POST /api/login`, session `GET /api/session`, logout `POST /api/logout`. 
 | `POST /api/encounters/:id/checkout` | Assigned physician | Validate and queue exactly one claim |
 | `GET/POST /api/suggestions` | All read; practice staff write | Manual candidate codes with rationale |
 | `GET/POST /api/authorizations` | All read; biller/admin write | Track requests; approval update is intentionally absent |
-| `GET /api/claims` | All | Role-filtered claims; patient status is the generic `PRACTICE_PROCESSING` |
-| `GET /api/claims/:id/events` | Practice staff | Internal claim history |
-| `GET/POST /api/claims/:id/denials` | Practice staff read; biller/admin write | Internal denial records; patients receive 403 |
+| `GET /api/claims` | Patient, biller/admin | Role-filtered claims; patient status is the generic `PRACTICE_PROCESSING` |
+| `GET /api/claims/:id/events` | Biller/admin | Internal claim history |
+| `GET/POST /api/claims/:id/denials` | Biller/admin | Internal denial records; patients receive 403 |
 | `GET/POST /api/claims/:id/payments` | All authorized read; biller/admin write | Recorded payments |
 | `POST /api/appeals` | Biller/admin | Draft appeal linked to denial |
 | `GET/POST /api/files`, `GET /api/files/:id` | Authorized chart users | Upload and fetch PNG/JPEG/PDF, max 4 MB |
@@ -52,3 +52,20 @@ Seven-day retention starts at creation, not publication. Expiry immediately deni
 Private storage is `AUDIO_DIR` (default `data/private-audio`) with directory mode 0700 and file mode 0600, outside served assets. It needs a persistent volume for restart durability; ephemeral hosts lose both SQLite and files. This is not encrypted clinical storage or a PHI-ready authorization/consent/retention design. The public `demo/` server and its role toggle never call these endpoints; Railway continues to run that separate concept demo.
 
 Internal denial/event endpoints are staff-only even for the claim’s own patient. Patient claim lists return a generic workflow status and the patient UI requests only recorded payments for claim details. This hides internal correction workflows in the app; it is not a restriction on communications an insurer may send to a member. No real resubmission endpoint or payer-form connector is implemented.
+
+
+## Fictional clearinghouse transmissions
+
+All endpoints below require an active biller/admin in the claim's organization. Mutations require the normal CSRF token. No live clearinghouse submission or external response webhook exists. See [CLEARINGHOUSE_FOUNDATION.md](CLEARINGHOUSE_FOUNDATION.md) for persistence, retry and release boundaries.
+
+| Endpoint | Method/body | Result |
+| --- | --- | --- |
+| `/api/billing/connector` | GET | Simulation opt-in flag, `live_transmission_enabled:false`, simulation notice |
+| `/api/claims/:id/transmissions` | GET | All revisions, immutable reviewed lines, simulation events, outbox state, attempt count, next retry time and submission identifier; audited |
+| `/api/claims/:id/simulate` | POST `{"scenario":"PAID"}` | Select one fictional `PAID`, `REJECTED` or `DENIED` outcome for the queued transmission |
+| `/api/claims/:id/process-simulation` | POST | Process one due fictional transmission; active lease/backoff/completed job means no new attempt |
+| `/api/claims/:id/correct-simulation` | POST `{"lines":[...],"reason":"Reviewed fictional correction","reviewed":true,"request_key":"stable-client-key"}` | New fictional revision after completed rejection, with a new idempotency UUID; unchanged/invalid lines blocked |
+
+Simulation mutation routes require nonproduction, `SEED_DEMO=true` and `FICTIONAL_CLEARINGHOUSE_DEMO=true`; they accept only the bundled fictional patient/payer. Correction `lines` use the checkout line shape. Use a stable 8–100 character alphanumeric/hyphen/underscore `request_key` for retries of the same correction request; reuse with different values returns 409. The API also permits a fictional correction `scenario` of `PAID`, `REJECTED` or `DENIED` (default `PAID`). Corrections cannot automatically resubmit adjudicated denials.
+
+Staff claim lists include `transmission`, whose `status` and `label` explicitly distinguish queued, simulated transmitted, clearinghouse accepted, payer accepted, adjudicated, rejected, denied and paid. `state` separately tracks `QUEUED`, `PROCESSING`, `RETRY`, `DONE` or `EXHAUSTED`; it is a worker state, not an insurer decision. The underlying claim status is not changed by simulation. Patient responses exclude the entire transmission object and response history. Fictional remittances are never posted to patient payment records.
