@@ -1,3 +1,4 @@
+import { migrateAppointmentCoding } from './appointment-coding.js';
 import { migrateCodeCoverage } from './code-coverage.js';
 import { migrateClearinghouse } from './clearinghouse-schema.js';
 import { DatabaseSync } from 'node:sqlite';
@@ -30,6 +31,7 @@ export function openDb(path) {
   `);
   migrateClearinghouse(db);
   migrateCodeCoverage(db);
+  migrateAppointmentCoding(db);
   return db;
 }
 export const uid = () => randomUUID();

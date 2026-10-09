@@ -11,7 +11,7 @@ export function queueClaim(db,claim,lines,{revision=1,requestKey=null,scenario=n
     patient_id:claim.patient_id,payer_name:claim.payer_name,member_id:claim.member_id,
     correction_reason:correctionReason,total_cents:lines.reduce((sum,l)=>sum+l.units*l.charge_cents,0),lines:lines.map(l=>({
       procedure_system:l.procedure_system||'CPT',procedure_code:l.procedure_code,diagnosis_code:l.diagnosis_code,
-      modifier:l.modifier||null,units:l.units,charge_cents:l.charge_cents,authorization_id:l.authorization_id||null
+      modifier:l.modifier||null,units:l.units,charge_cents:l.charge_cents,authorization_id:l.authorization_id||null,...(l.source_review_id?{source_review_id:l.source_review_id}:{}),...(l.drug_component?{drug_component:l.drug_component}:{})
     }))});
   const id=uid();
   db.prepare(`INSERT INTO claim_outbox (id,org_id,claim_id,revision,idempotency_key,request_key,snapshot,scenario,created_at)
@@ -166,4 +166,4 @@ export function createClearinghouseService(db,{enabled=false,clock=Date.now,leas
   return {status,list,configure,correct,process,processOne,acquire,receive,finish,adapter};
 }
 function normalizeLines(lines){return lines.map(l=>({procedure_system:l.procedure_system||'CPT',procedure_code:l.procedure_code,
-  diagnosis_code:l.diagnosis_code,modifier:l.modifier||null,units:l.units,charge_cents:l.charge_cents,authorization_id:l.authorization_id||null}));}
+  diagnosis_code:l.diagnosis_code,modifier:l.modifier||null,units:l.units,charge_cents:l.charge_cents,authorization_id:l.authorization_id||null,...(l.source_review_id?{source_review_id:l.source_review_id}:{}),...(l.drug_component?{drug_component:l.drug_component}:{})}));}

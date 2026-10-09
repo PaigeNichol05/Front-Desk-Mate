@@ -88,3 +88,13 @@ test('code and coverage HTTP controls require staff session, organization access
  assert.equal((await s.request('/api/billing/codes/import',{user:biller,method:'POST',body:{}})).status,403);
  assert.equal((await s.request('/code-coverage.js')).status,200);
 });
+
+test('appointment services and coding review HTTP writes enforce source, status, staff role and CSRF',async t=>{
+ const s=await start(t),doctor=await s.login('doctor@example.test'),biller=await s.login('biller@example.test'),patient=await s.login('patient@example.test'),path='/api/encounters/enc-001';
+ assert.equal((await s.request(path+'/services')).status,401);assert.equal((await s.request(path+'/services',{user:patient})).status,403);assert.equal((await s.request(path+'/services',{user:biller})).status,200);
+ const note=await (await s.request(path+'/sections',{user:doctor,method:'POST',body:{kind:'PLAN',content:'Fictional CT order; not performed here'}})).json();
+ const service={source_section_id:note.id,category:'CT',state:'ORDERED',description:'Fictional CT order',body_part:'lumbar spine',laterality:'Not applicable',contrast:'NONE',indication:'Fictional indication',search_terms:'computed tomography',reviewed:true};
+ assert.equal((await s.request(path+'/services',{user:biller,method:'POST',body:service})).status,403);assert.equal((await s.request(path+'/services',{user:doctor,method:'POST',csrf:false,body:service})).status,403);assert.equal((await s.request(path+'/services',{user:doctor,method:'POST',body:service})).status,201);
+ const data=await (await s.request(path+'/services',{user:biller})).json();assert.equal(data.services[0].billing_review_allowed,false);assert.equal(data.services[0].catalog_candidates.length,0);assert.equal((await s.request(path+'/coding-review',{user:biller,method:'POST',body:{service_id:data.services[0].id,reviewed:true}})).status,409);
+ assert.equal((await s.request('/appointment-coding.js')).status,200);
+});
