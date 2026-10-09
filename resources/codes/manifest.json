@@ -1,0 +1,26 @@
+[
+  {
+    "system": "HCPCS",
+    "version": "2026-Q4",
+    "source_url": "https://www.cms.gov/files/zip/october-2026-alpha-numeric-hcpcs-file.zip",
+    "source_file": "HCPC2026_OCT_ANWEB_09232026.xlsx",
+    "source_sha256": "ac352198b97b407d5a08b1d61965ccc2e13d878d5cc8f78333a8cc1f75896527",
+    "file": "hcpcs.json.gz",
+    "sha256": "f6cf30bb976fe11913354cb4c143d7ba6ddcd2812f698eff0aa41bbf7fde94aa",
+    "count": 7448,
+    "retrieved_on": "2026-10-09",
+    "notes": "CMS public-use non-dental Level II codes; no CPT or dental CDT content. Medicare coverage indicators intentionally excluded."
+  },
+  {
+    "system": "ICD10CM",
+    "version": "FY2027",
+    "source_url": "https://www.cms.gov/files/zip/2027-code-descriptions-tabular-order.zip",
+    "source_file": "icd10cm_codes_2027.txt",
+    "source_sha256": "3c0583a38ee0e848f7dc0ac8ce88e8f001bbba8c6385ed825d44d46f6e5297c9",
+    "file": "icd10cm.json.gz",
+    "sha256": "1573d246818c46cc01e908e7c78cd1b0c6c9c6629e09a0707446e324cc9e0b8b",
+    "count": 74879,
+    "retrieved_on": "2026-10-09",
+    "notes": "Billable diagnosis code descriptions only. Consult official tabular instructions and coding guidelines."
+  }
+]

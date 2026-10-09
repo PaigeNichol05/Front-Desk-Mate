@@ -1,3 +1,4 @@
+import { migrateCodeCoverage } from './code-coverage.js';
 import { migrateClearinghouse } from './clearinghouse-schema.js';
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
@@ -28,6 +29,7 @@ export function openDb(path) {
     CREATE TABLE IF NOT EXISTS audit_log (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, actor_id TEXT NOT NULL, action TEXT NOT NULL, resource TEXT NOT NULL, resource_id TEXT NOT NULL, occurred_at TEXT NOT NULL);
   `);
   migrateClearinghouse(db);
+  migrateCodeCoverage(db);
   return db;
 }
 export const uid = () => randomUUID();

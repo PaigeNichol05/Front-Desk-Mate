@@ -73,3 +73,18 @@ test('production simulation, unseeded simulation, and attempted live enablement 
     }finally{rmSync(dir,{recursive:true,force:true})}
   }
 });
+
+test('code and coverage HTTP controls require staff session, organization access and CSRF',async t=>{
+ const s=await start(t),biller=await s.login('biller@example.test'),doctor=await s.login('doctor@example.test'),patient=await s.login('patient@example.test');
+ const codePath='/api/billing/codes?system=HCPCS&q=J3301&service_date=2026-10-09';
+ assert.equal((await s.request(codePath)).status,401);assert.equal((await s.request(codePath,{user:patient})).status,403);assert.equal((await s.request(codePath,{user:doctor})).status,200);
+ const c={encounter_id:'enc-001',plan_reference:'Fictional plan',procedure_system:'HCPCS',procedure_code:'J3301',diagnosis_code:'M54.50',modifier:'',units:1,place_of_service:'11'};
+ const path='/api/billing/coverage?'+new URLSearchParams(c);assert.equal((await s.request(path,{user:patient})).status,403);assert.equal((await (await s.request(path,{user:biller})).json()).status,'NOT_VERIFIED');
+ const evidence={reviewed:true,source_kind:'PLAN_DOCUMENT',source_reference:'Fictional fixture only',status:'CONDITIONAL',checked_on:new Date().toISOString().slice(0,10),expires_on:new Date().toISOString().slice(0,10),eligibility:'UNKNOWN',network:'UNKNOWN',provider_enrollment:'UNKNOWN',requirements:'Unknown',cost_sharing:'Unknown'};
+ assert.equal((await s.request('/api/billing/coverage',{user:biller,method:'POST',csrf:false,body:{...c,evidence}})).status,403);
+ assert.equal((await s.request('/api/billing/coverage',{user:doctor,method:'POST',body:{...c,evidence}})).status,403);
+ assert.equal((await s.request('/api/billing/coverage',{user:biller,method:'POST',body:{...c,evidence}})).status,201);
+ assert.equal((await (await s.request(path,{user:biller})).json()).status,'POLICY_ONLY');
+ assert.equal((await s.request('/api/billing/codes/import',{user:biller,method:'POST',body:{}})).status,403);
+ assert.equal((await s.request('/code-coverage.js')).status,200);
+});
