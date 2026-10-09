@@ -130,3 +130,8 @@ The concept walkthrough also includes **Denials & resubmissions** in its main na
 The concept also demonstrates an **assessment-to-care-plan draft** from one fixed fictional assessment, with source matching, explicit clinician review, and separate signing. It does not process recorded assessments or use live AI; real transcription and clinical drafting remain production requirements.
 
 Visit activities in the concept support multiple independent selections. Denial records and forms are staff-only; patient claim-list API responses use a generic workflow status and deny access to internal denial/event endpoints. The sample correction form auto-fills fixed fields and supports a reviewed **simulated** resubmission receipt. Real automatic resubmission is not connected.
+
+
+### Test-only clearinghouse foundation
+
+Completed checkout now atomically creates a persistent transmission outbox with immutable reviewed snapshots and stable idempotency identifiers. The authenticated local billing workspace supports explicitly fictional transport, acceptance/rejection, adjudication, denial and remittance events, with retries and restart recovery. Run `npm run demo:complete`, then sign in as the sample biller to exercise it. Real insurer transmission remains disabled. The public Railway concept demo is unchanged. See [the foundation guide](docs/CLEARINGHOUSE_FOUNDATION.md) and [API endpoints](docs/API.md).
