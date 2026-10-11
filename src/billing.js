@@ -1,6 +1,9 @@
+import { sourceLineIssues } from './appointment-coding.js';
 import { uid, now, audit } from './db.js';
+import { queueClaim } from './clearinghouse.js';
 
 export function documentationChecks(db, encounter, lines) {
+  if(!Array.isArray(lines))return ['Claim lines must be an array.'];
   const sections=db.prepare('SELECT kind FROM clinical_sections WHERE encounter_id=?').all(encounter.id).map(x=>x.kind);
   const issues=[];
   if(!encounter.signed_at) issues.push('Encounter must be signed by the clinician.');
@@ -8,15 +11,25 @@ export function documentationChecks(db, encounter, lines) {
   if(!lines.length) issues.push('At least one reviewed procedure and diagnosis line is required.');
   const patient=db.prepare('SELECT * FROM patients WHERE id=?').get(encounter.patient_id);
   if(!patient?.payer_name || !patient?.member_id) issues.push('Payer and member ID are required.');
+  if(!Number.isSafeInteger(lines.reduce((sum,l)=>sum+(l?.units*l?.charge_cents),0))) issues.push('Total charge is invalid.');
   for (const line of lines) {
-    if(!/^[A-Z0-9.]{3,8}$/.test(line.diagnosis_code||'')) issues.push('Diagnosis code format needs review.');
-    if(!/^[A-Z0-9]{4,7}$/.test(line.procedure_code||'')) issues.push('Procedure code format needs review.');
-    if(!Number.isInteger(line.units)||line.units<1||!Number.isInteger(line.charge_cents)||line.charge_cents<0) issues.push('Units or charge is invalid.');
+    if(!line||typeof line!=='object'){issues.push('Invalid claim line.');continue;}
+    issues.push(...sourceLineIssues(db,encounter,line));
+    if(!['CPT','HCPCS'].includes(line.procedure_system||'CPT')) issues.push('Unsupported procedure system.');
+    if(typeof line.diagnosis_code!=='string'||!/^[A-Z0-9.]{3,8}$/.test(line.diagnosis_code||'')) issues.push('Diagnosis code format needs review.');
+    if(typeof line.procedure_code!=='string'||!/^[A-Z0-9]{4,7}$/.test(line.procedure_code||'')) issues.push('Procedure code format needs review.');
+    if(!Number.isSafeInteger(line.units)||line.units<1||!Number.isSafeInteger(line.charge_cents)||line.charge_cents<0||!Number.isSafeInteger(line.units*line.charge_cents)) issues.push('Units or charge is invalid.');
+    if(line.modifier!=null&&(typeof line.modifier!=='string'||line.modifier.length>20||(line.modifier&&!/^[A-Z0-9]{2}(,[A-Z0-9]{2})*$/.test(line.modifier)))) issues.push('Modifier format needs review.');
+    if(line.authorization_id!=null&&(typeof line.authorization_id!=='string'||line.authorization_id.length>100)){issues.push('Invalid authorization ID.');continue;}
     if(line.authorization_id) {
       const a=db.prepare('SELECT * FROM authorizations WHERE id=? AND org_id=? AND patient_id=?').get(line.authorization_id,encounter.org_id,encounter.patient_id);
       if(!a || a.status!=='APPROVED' || a.procedure_code!==line.procedure_code || (a.starts_on && a.starts_on>encounter.date_of_service) || (a.ends_on && a.ends_on<encounter.date_of_service)) issues.push('Authorization does not match the patient, procedure, date, and approved status.');
     }
   }
+  const linked=lines.filter(l=>typeof l?.source_review_id==='string'&&l.source_review_id).map(l=>l.source_review_id);
+  const serviceCodes=linked.map(id=>{const r=db.prepare('SELECT service_id,line_json FROM service_code_reviews WHERE id=? AND org_id=? AND encounter_id=?').get(id,encounter.org_id,encounter.id);if(!r)return id;const l=JSON.parse(r.line_json);return JSON.stringify([r.service_id,l.procedure_system,l.procedure_code,l.drug_component||l.modifier]);});
+  if(new Set(serviceCodes).size!==serviceCodes.length)issues.push('The same service and procedure/modifier cannot be billed twice.');
+  if(new Set(linked).size!==linked.length)issues.push('A reviewed source line cannot be billed twice in the same claim.');
   return [...new Set(issues)];
 }
 export function checkout(db, user, encounterId, lines) {
@@ -30,9 +43,10 @@ export function checkout(db, user, encounterId, lines) {
   db.exec('BEGIN IMMEDIATE');
   try {
     db.prepare('INSERT INTO claims VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(claimId,user.org_id,encounterId,patient.id,patient.payer_name,patient.member_id,'AWAITING_CONNECTOR',lines.reduce((a,x)=>a+x.units*x.charge_cents,0),null,timestamp,timestamp);
-    for(const l of lines) db.prepare('INSERT INTO claim_lines VALUES (?,?,?,?,?,?,?,?,?)').run(uid(),claimId,l.procedure_system||'CPT',l.procedure_code,l.modifier||null,l.diagnosis_code,l.units,l.charge_cents,l.authorization_id||null);
+    for(const l of lines){const lineId=uid();db.prepare('INSERT INTO claim_lines VALUES (?,?,?,?,?,?,?,?,?)').run(lineId,claimId,l.procedure_system||'CPT',l.procedure_code,l.modifier||null,l.diagnosis_code,l.units,l.charge_cents,l.authorization_id||null);if(l.source_review_id)db.prepare('INSERT INTO claim_line_sources VALUES (?,?)').run(lineId,l.source_review_id);}
     db.prepare("UPDATE encounters SET status='CHECKED_OUT',checked_out_at=? WHERE id=?").run(timestamp,encounterId);
     db.prepare('INSERT INTO claim_events VALUES (?,?,?,?,?)').run(uid(),claimId,'QUEUED','Validated at checkout; awaiting configured clearinghouse connector. No payer transmission has occurred.',timestamp);
+    queueClaim(db,db.prepare('SELECT * FROM claims WHERE id=?').get(claimId),lines);
     audit(db,user,'CHECKOUT','claim',claimId);
     db.exec('COMMIT');
   } catch(e){db.exec('ROLLBACK');throw e;}

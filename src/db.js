@@ -1,3 +1,6 @@
+import { migrateAppointmentCoding } from './appointment-coding.js';
+import { migrateCodeCoverage } from './code-coverage.js';
+import { migrateClearinghouse } from './clearinghouse-schema.js';
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -6,7 +9,7 @@ import { randomUUID, scryptSync, randomBytes } from 'node:crypto';
 export function openDb(path) {
   mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
-  db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;');
+  db.exec('PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;');
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (id TEXT PRIMARY KEY, name TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, org_id TEXT NOT NULL REFERENCES organizations(id), patient_id TEXT, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('PATIENT','PHYSICIAN','BILLER','ADMIN')), password_hash TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1);
@@ -26,6 +29,9 @@ export function openDb(path) {
     CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, patient_id TEXT REFERENCES patients(id), kind TEXT NOT NULL, title TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'OPEN');
     CREATE TABLE IF NOT EXISTS audit_log (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, actor_id TEXT NOT NULL, action TEXT NOT NULL, resource TEXT NOT NULL, resource_id TEXT NOT NULL, occurred_at TEXT NOT NULL);
   `);
+  migrateClearinghouse(db);
+  migrateCodeCoverage(db);
+  migrateAppointmentCoding(db);
   return db;
 }
 export const uid = () => randomUUID();
