@@ -1,0 +1,18 @@
+# Blood pressure and heart-rate observations
+
+The authenticated patient encounter now has a **Blood pressure & heart rate** section. It records fictional demonstration observations and displays their history. It is not live medical-device monitoring or a validated clinical monitoring system.
+
+1. Start `npm run demo:complete`. Sign in as `doctor@example.test`, password `DemoOnly!ChangeMe123`, open **Patients → Jordan Sample → Open**.
+2. Before signing, enter a fictional systolic/diastolic pair in **mmHg**, pulse in **beats/min**, measurement time, sample source/device label, position and arm. Either the pressure pair or pulse may be omitted; absent values stay null. Confirm the values and save.
+3. Alternatively choose **Generate fixed sample readings · 118/76 · pulse 72**. These are generated values, not a measurement or a connected device. The server controls the fixed values and marks them `SIMULATED_DEVICE` with `FIXED_VITALS_FIXTURE_V1` provenance.
+4. To correct an entry, choose the current observation in **Record type**, supply corrected values and a correction reason. The original is retained and marked corrected. Sign the encounter to lock further entries. The patient account can read only its own observation history; billing/admin accounts cannot read or write these clinical observations.
+
+The table retains pressure, pulse, measurement timestamp, source, source reference, position, arm, notes, recorded-by actor, recorded-at time and correction relationship. Measurements use explicit UTC timestamps in storage; the input is labeled with the browser's local time and converted to UTC. In this foundation the UTC measurement date must match the encounter date; cross-time-zone encounter-date handling requires further design before real clinical use. Future timestamps, impossible calendar dates, unpaired blood-pressure values, noninteger values and input-range failures are rejected. Supported input ranges (systolic 20–350, diastolic 10–250, pulse 10–300) are transcription checks only, not clinical normal ranges or diagnostic thresholds.
+
+`vital_observations` is append-only, with triggers blocking updates/deletes, scoped correction links, database-level tenant/patient/encounter/actor constraints and atomic audit records. The assigned active physician can write only to an open encounter; a signed or checked-out encounter is locked. Patients and assigned clinicians have read access within the organization. Reads, new entries and corrections are audited. These observations do not generate diagnoses, codes or claims.
+
+## Live device work still required
+
+A phone/web app cannot itself measure cuff blood pressure. Live pulse or blood-pressure ingestion needs a specified supported cuff, wearable or medical-device API. This release has **no** Bluetooth pairing, wearable account, device credentials, sensor acquisition, camera pulse estimation, ECG, continuous monitoring, background collection, clinical alerting or emergency response.
+
+Before adding one, identify the exact device/model and approved intended use; verify vendor interface terms and agreements; validate pairing and patient association; preserve device/model/serial, firmware, calibration, timestamps, units and quality flags; handle duplicates, disconnections and delayed readings; require clinician review of questionable data; and validate clinical safety and applicable regulatory obligations. Device access, transport authentication, credential custody and retention must be designed with the production security controls. The current demo does not make a medical-device or clinical-use claim.

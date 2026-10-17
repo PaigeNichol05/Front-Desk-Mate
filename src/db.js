@@ -1,4 +1,6 @@
 import { migrateAppointmentCoding } from './appointment-coding.js';
+import { migrateEligibility } from './eligibility.js';
+import { migrateVitals } from './vitals.js';
 import { migrateCodeCoverage } from './code-coverage.js';
 import { migrateClearinghouse } from './clearinghouse-schema.js';
 import { DatabaseSync } from 'node:sqlite';
@@ -28,10 +30,14 @@ export function openDb(path) {
     CREATE TABLE IF NOT EXISTS payments (id TEXT PRIMARY KEY, claim_id TEXT NOT NULL REFERENCES claims(id), amount_cents INTEGER NOT NULL, adjustment_cents INTEGER NOT NULL DEFAULT 0, reference TEXT NOT NULL, posted_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, patient_id TEXT REFERENCES patients(id), kind TEXT NOT NULL, title TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'OPEN');
     CREATE TABLE IF NOT EXISTS audit_log (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, actor_id TEXT NOT NULL, action TEXT NOT NULL, resource TEXT NOT NULL, resource_id TEXT NOT NULL, occurred_at TEXT NOT NULL);
+    CREATE UNIQUE INDEX IF NOT EXISTS encounter_tenant_patient ON encounters(id,org_id,patient_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS user_tenant ON users(id,org_id);
   `);
   migrateClearinghouse(db);
   migrateCodeCoverage(db);
   migrateAppointmentCoding(db);
+  migrateEligibility(db);
+  migrateVitals(db);
   return db;
 }
 export const uid = () => randomUUID();

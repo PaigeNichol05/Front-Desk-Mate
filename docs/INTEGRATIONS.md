@@ -1,5 +1,7 @@
 # Payer integration contract
 
+The separate [eligibility simulation](ELIGIBILITY_SIMULATION.md) now implements a local structured request/normalized-benefit response boundary with durable attempts, review and audit history. It is independent of the claims adapter. Live 270/271 transport remains absent and disabled; `LIVE_ELIGIBILITY_ENABLED=true` or a non-`none` eligibility adapter aborts startup. No credential configuration activates real transmission.
+
 The `AWAITING_CONNECTOR` state is the explicit handoff after local checkout. No mock acknowledgment is promoted to a live payer status. The repository now includes a persistent test-only outbox worker and deterministic fictional adapter, documented in [CLEARINGHOUSE_FOUNDATION.md](CLEARINGHOUSE_FOUNDATION.md). Real claim status stays `AWAITING_CONNECTOR`; separate staff-only `SIMULATED_*` projections never represent actual insurer responses. A future authorized live adapter still needs an interface like:
 
 ```ts
