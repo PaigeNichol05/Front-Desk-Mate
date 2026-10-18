@@ -96,6 +96,51 @@ test('vital-sign HTTP access is clinical, encounter-scoped and read-only after s
   assert.equal((await s.request(path, { user: patient })).status, 200);
 });
 
+test('historical vital-sign HTTP samples and manual entries retain date validation and signing locks', async t => {
+  const s = await start(t), doctor = await s.login('doctor@example.test'), patient = await s.login('patient@example.test');
+  const path = '/api/encounters/enc-001/vitals', sample = { source: 'SIMULATED_DEVICE', reviewed: true };
+  const db = openDb(s.path);
+  const serviceDate = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const futureDate = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  try {
+    db.prepare("UPDATE encounters SET date_of_service=? WHERE id='enc-001'").run(serviceDate);
+    db.prepare('INSERT INTO encounters(id,org_id,patient_id,clinician_id,date_of_service) VALUES (?,?,?,?,?)')
+      .run('enc-future', 'demo-clinic', 'patient-001', 'doctor-001', futureDate);
+  } finally { db.close(); }
+  const created = await s.request(path, { user: doctor, method: 'POST', body: sample });
+  assert.equal(created.status, 201);
+  assert.equal((await created.json()).simulated, true);
+  const manual = { source: 'MANUAL', systolic: 122, diastolic: 79, heart_rate: 75,
+    measured_at: `${serviceDate}T09:15:30.123Z`, source_reference: 'Fictional manual cuff entry',
+    position: 'STANDING', arm: 'RIGHT', reviewed: true };
+  const savedManual = await s.request(path, { user: doctor, method: 'POST', body: manual });
+  assert.equal(savedManual.status, 201);
+  assert.equal((await savedManual.json()).simulated, false);
+  const wrongDate = await s.request(path, { user: doctor, method: 'POST', body: { ...manual, measured_at: new Date().toISOString() } });
+  assert.equal(wrongDate.status, 400);
+  assert.match((await wrongDate.json()).error, /Measurement date must match/);
+  const future = await s.request('/api/encounters/enc-future/vitals', { user: doctor, method: 'POST', body: sample });
+  assert.equal(future.status, 400);
+  assert.match((await future.json()).error, /not in the future/);
+  const before = await (await s.request(path, { user: patient })).json();
+  assert.equal(before.history.length, 2);
+  const fixture = before.history.find(v => v.source === 'SIMULATED_DEVICE');
+  const entered = before.history.find(v => v.source === 'MANUAL');
+  assert.equal(fixture.measured_at, `${serviceDate}T00:00:00.000Z`);
+  assert.equal(fixture.source_reference, 'FIXED_VITALS_FIXTURE_V1');
+  assert.deepEqual([fixture.systolic, fixture.diastolic, fixture.heart_rate], [118, 76, 72]);
+  assert.equal(entered.measured_at, manual.measured_at);
+  assert.deepEqual([entered.systolic, entered.diastolic, entered.heart_rate], [122, 79, 75]);
+  assert.equal(before.device_connected, false);
+  assert.equal(before.continuous_monitoring, false);
+  assert.equal((await s.request('/api/encounters/enc-001/sign', { user: doctor, method: 'POST', body: {} })).status, 200);
+  for (const body of [sample, manual, { ...sample, supersedes_id: fixture.id, notes: 'Fictional correction' }, { ...manual, supersedes_id: entered.id, notes: 'Fictional correction' }]) {
+    assert.equal((await s.request(path, { user: doctor, method: 'POST', body })).status, 409);
+  }
+  assert.deepEqual((await (await s.request(path, { user: patient })).json()).history, before.history);
+  assert.deepEqual((await (await s.request('/api/encounters/enc-future/vitals', { user: doctor })).json()).history, []);
+});
+
 test('production/unseeded simulation and all attempted live adapters fail closed at startup', async () => {
   for (const extra of [{ NODE_ENV: 'production', SEED_DEMO: 'false' }, { SEED_DEMO: 'false' }, { LIVE_ELIGIBILITY_ENABLED: 'true', FICTIONAL_ELIGIBILITY_DEMO: 'false' }, { ELIGIBILITY_ADAPTER: 'live', FICTIONAL_ELIGIBILITY_DEMO: 'false' }]) {
     const dir = mkdtempSync(join(tmpdir(), 'eligibility-startup-'));

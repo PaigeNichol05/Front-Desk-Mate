@@ -38,7 +38,9 @@ export function recordVitals(db, user, encounterId, body) {
   const { u, e } = access(db, user, encounterId, true);
   if (!body || body.reviewed !== true || !['MANUAL', 'SIMULATED_DEVICE'].includes(body.source)) throw fail(400, 'Confirm reviewed readings and their source');
   const simulated = body.source === 'SIMULATED_DEVICE';
-  const b = simulated ? { ...body, systolic: 118, diastolic: 76, heart_rate: 72, measured_at: now(), source_reference: 'FIXED_VITALS_FIXTURE_V1', position: 'SEATED', arm: 'LEFT' } : body;
+  // Fictional samples use the encounter's UTC date; recorded_at retains the actual save time.
+  // Keep the same timestamp/date validation below, including rejection of future encounters.
+  const b = simulated ? { ...body, systolic: 118, diastolic: 76, heart_rate: 72, measured_at: `${e.date_of_service}T00:00:00.000Z`, source_reference: 'FIXED_VITALS_FIXTURE_V1', position: 'SEATED', arm: 'LEFT' } : body;
   const value = (v, min, max) => {
     if (v === undefined || v === null) return null;
     if (!Number.isSafeInteger(v) || v < min || v > max) throw fail(400, 'Reading outside supported input range; verify the entered value and units');
