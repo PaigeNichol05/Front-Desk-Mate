@@ -1,5 +1,9 @@
 # Front Desk Mate · practice-management foundation
 
+**October 18, 2026 · v0.3.0:** [five-day billing-source audits and reviewed catalog updates](docs/BILLING_UPDATES.md), plus [pre-service authorization worksheets and the AI-agent integration scope](docs/AUTHORIZATION_PLANNING.md). The authenticated Billing screen now shows source-check history and staged/published releases. The complete local launcher enables public-source checks; no patient data leaves the app. These checks do not automatically install codes, determine member coverage or submit payer forms.
+
+The [clearinghouse connection plan](docs/CLEARINGHOUSE_CONNECTION_PLAN.md) separates the existing test adapter from the vendor agreements, enrollment and live integrations still required. Validation for v0.3.0: **92 tests pass**. No live AI, payer authorization, production eligibility or actual claim transmission is enabled.
+
 **October 17, 2026 update:** [what changed and four demo steps](docs/UPDATE_2026_10_17.md). The authenticated local app now includes [fictional eligibility and benefits requests](docs/ELIGIBILITY_SIMULATION.md) and [blood-pressure/heart-rate observations](docs/VITAL_SIGNS.md). Run `npm run demo:complete` to try both. Simulations remain separate from manual coverage evidence; live payer transmission and medical-device monitoring are not connected.
 
 A runnable, dependency-free Node 24 and SQLite starter for one unified patient/physician/billing workflow. The local demo links patient charts, encounters, code review, checkout, and claim tracking. **It is a development prototype, not an EHR certified for clinical use, a HIPAA compliance certification, or a live payer connection. Do not enter real patient information.**

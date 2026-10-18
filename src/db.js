@@ -1,6 +1,9 @@
 import { migrateAppointmentCoding } from './appointment-coding.js';
 import { migrateEligibility } from './eligibility.js';
 import { migrateVitals } from './vitals.js';
+import { migrateCatalogUpdates } from './catalog-updates.js';
+import { migrateBillingAudits } from './billing-audits.js';
+import { migrateAuthorizationPlanning } from './authorization-planning.js';
 import { migrateCodeCoverage } from './code-coverage.js';
 import { migrateClearinghouse } from './clearinghouse-schema.js';
 import { DatabaseSync } from 'node:sqlite';
@@ -38,6 +41,9 @@ export function openDb(path) {
   migrateAppointmentCoding(db);
   migrateEligibility(db);
   migrateVitals(db);
+  migrateCatalogUpdates(db);
+  migrateBillingAudits(db);
+  migrateAuthorizationPlanning(db);
   return db;
 }
 export const uid = () => randomUUID();

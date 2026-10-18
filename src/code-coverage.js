@@ -3,6 +3,7 @@ import { gunzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { uid, now, audit } from './db.js';
 import { eligibilityForContext } from './eligibility.js';
+import { publishedCatalog } from './catalog-updates.js';
 const directory=new URL('../resources/codes/',import.meta.url);
 export const catalogManifest=JSON.parse(readFileSync(new URL('manifest.json',directory)));
 const catalogs=new Map(catalogManifest.map(m=>{
@@ -11,6 +12,7 @@ const catalogs=new Map(catalogManifest.map(m=>{
   return [m.system,JSON.parse(gunzipSync(compressed))];
 }));
 const fail=(status,message)=>Object.assign(Error(message),{status});
+export function publicCatalog(system){return catalogs.get(system)||[]}
 export function migrateCodeCoverage(db){db.exec(`
  CREATE TABLE IF NOT EXISTS licensed_codes (org_id TEXT NOT NULL REFERENCES organizations(id),system TEXT NOT NULL CHECK(system='CPT'),code TEXT NOT NULL,description TEXT NOT NULL,starts_on TEXT NOT NULL,ends_on TEXT NOT NULL,license_reference TEXT NOT NULL,source_reference TEXT NOT NULL,imported_by TEXT NOT NULL REFERENCES users(id),imported_at TEXT NOT NULL,PRIMARY KEY(org_id,system,code,starts_on));
  CREATE TABLE IF NOT EXISTS coverage_reviews (id TEXT PRIMARY KEY,org_id TEXT NOT NULL REFERENCES organizations(id),patient_id TEXT NOT NULL REFERENCES patients(id),encounter_id TEXT NOT NULL REFERENCES encounters(id),payer_name TEXT NOT NULL,member_id TEXT NOT NULL,context_json TEXT NOT NULL,evidence_json TEXT NOT NULL,created_by TEXT NOT NULL REFERENCES users(id),created_at TEXT NOT NULL);
@@ -24,8 +26,8 @@ function text(value,name,max=500){if(typeof value!=='string'||!value.trim()||val
 export function searchCodes(db,user,{system='HCPCS',q='',service_date}={}){
  staff(db,user);date(service_date);if(!['HCPCS','ICD10CM','CPT'].includes(system))throw fail(400,'Unsupported code system');
  if(typeof q!=='string'||q.length>120)throw fail(400,'Invalid code search');
- const term=q.trim().toLowerCase(),manifest=catalogManifest.find(m=>m.system===system);
- const rows=system==='CPT'?db.prepare('SELECT code,description,starts_on,ends_on,source_reference,license_reference FROM licensed_codes WHERE org_id=? AND starts_on<=? AND ends_on>=? ORDER BY code').all(user.org_id,service_date,service_date):(catalogs.get(system)||[]).filter(r=>r.starts_on<=service_date&&r.ends_on>=service_date);
+ const term=q.trim().toLowerCase(),published=publishedCatalog(db,user.org_id,system,service_date),manifest=published?.source||catalogManifest.find(m=>m.system===system);
+ const rows=published?published.codes:system==='CPT'?db.prepare('SELECT code,description,starts_on,ends_on,source_reference,license_reference FROM licensed_codes WHERE org_id=? AND starts_on<=? AND ends_on>=? ORDER BY code').all(user.org_id,service_date,service_date):(catalogs.get(system)||[]).filter(r=>r.starts_on<=service_date&&r.ends_on>=service_date);
  const matches=rows.filter(r=>r.code.toLowerCase().includes(term)||r.code.replaceAll('.','').toLowerCase().includes(term.replaceAll('.',''))||r.description.toLowerCase().includes(term));
  matches.sort((a,b)=>Number(b.code.toLowerCase()===term)-Number(a.code.toLowerCase()===term)||a.code.localeCompare(b.code));
  return {system,service_date,source:manifest||null,available:rows.length>0,total:matches.length,results:matches.slice(0,30),notice:system==='CPT'?'CPT content requires a private licensed import by an administrator.':'Catalog validity does not establish medical necessity, eligibility, coverage or payment. Dates outside installed releases require an updated catalog.'};
