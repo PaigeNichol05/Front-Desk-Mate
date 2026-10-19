@@ -1,4 +1,9 @@
 import { recordService, appointmentCoding, reviewServiceCode } from './appointment-coding.js';
+import { createEligibilityService } from './eligibility.js';
+import { recordVitals, vitalHistory } from './vitals.js';
+import { createBillingAudits } from './billing-audits.js';
+import { stageCatalog, publishCatalog } from './catalog-updates.js';
+import { draftAuthorization, authorizationDrafts } from './authorization-planning.js';
 import { searchCodes, importLicensedCodes, recordCoverage, coverageView } from './code-coverage.js';
 import http from 'node:http';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -37,6 +42,16 @@ if(process.env.FICTIONAL_CLEARINGHOUSE_DEMO==='true') {
   setInterval(async()=>{if(workerRunning)return;workerRunning=true;try{await clearinghouse.processOne('demo-clinic')}catch{console.error('Fictional clearinghouse maintenance failed')}finally{workerRunning=false}},1000).unref();
 }
 const sessions=new Map(); // Local demo only; production requires shared durable session storage.
+if (process.env.FICTIONAL_ELIGIBILITY_DEMO==='true' && (!dev || process.env.SEED_DEMO!=='true')) throw new Error('Fictional eligibility requires nonproduction and SEED_DEMO=true');
+if (process.env.LIVE_ELIGIBILITY_ENABLED==='true' || (process.env.ELIGIBILITY_ADAPTER && process.env.ELIGIBILITY_ADAPTER!=='none')) throw new Error('Real eligibility transmission and credentials are disabled');
+const eligibility=createEligibilityService(db,{enabled:dev && process.env.SEED_DEMO==='true' && process.env.FICTIONAL_ELIGIBILITY_DEMO==='true'});
+const billingAudits=createBillingAudits(db,{scheduled:process.env.BILLING_AUDIT_ENABLED==='true'});
+if(process.env.BILLING_AUDIT_ENABLED==='true'){
+  let auditRunning=false;
+  const tickAudits=async()=>{if(auditRunning)return;auditRunning=true;try{await billingAudits.tick()}catch{console.error('Billing-source audit failed; review the audit schedule and source access')}finally{auditRunning=false}};
+  setInterval(tickAudits,60000).unref();
+  setImmediate(tickAudits);
+}
 const json=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(JSON.stringify(data));};
 const fail=(status,message,details)=>Object.assign(new Error(message),{status,details});
 function body(req,max=1000000){return new Promise((resolveBody,reject)=>{let parts=[],size=0;req.on('data',c=>{size+=c.length;if(size>max){reject(fail(413,'Request too large'));req.destroy();}else parts.push(c)});req.on('end',()=>{try{resolveBody(JSON.parse(Buffer.concat(parts).toString()||'{}'))}catch{reject(fail(400,'Invalid JSON'))}});req.on('error',reject)});}
@@ -59,6 +74,22 @@ async function api(req,res,url){
   }
   if(path==='/api/session'&&req.method==='GET') {const u=requireUser(req);return json(res,200,{user:pick(u,['id','name','role']),csrf:session(req).csrf});}
   const u=requireUser(req);
+  if(path==='/api/billing/authorization-drafts'&&req.method==='POST')return json(res,201,draftAuthorization(db,u,await body(req,10000)));
+  const authDrafts=/^\/api\/encounters\/([^/]+)\/authorization-drafts$/.exec(path);
+  if(authDrafts){if(req.method==='GET')return json(res,200,authorizationDrafts(db,u,authDrafts[1]));throw fail(405,'Method not allowed');}
+  if(path==='/api/billing/maintenance'&&req.method==='GET')return json(res,200,billingAudits.view(u));
+  if(path==='/api/billing/maintenance/run'&&req.method==='POST'){requireUser(req,['BILLER','ADMIN']);const b=await body(req,1024);if(!b||typeof b!=='object'||Array.isArray(b)||Object.keys(b).length)throw fail(400,'Source audits accept only an empty object; source URLs are fixed');return json(res,201,await billingAudits.run(u));}
+  if(path==='/api/billing/catalog-releases'&&req.method==='POST'){requireUser(req,['ADMIN']);return json(res,201,stageCatalog(db,u,await body(req,25000000)));}
+  const publication=/^\/api\/billing\/catalog-releases\/([^/]+)\/publish$/.exec(path);
+  if(publication){if(req.method==='POST'){requireUser(req,['ADMIN']);return json(res,201,publishCatalog(db,u,publication[1],await body(req,5000)));}throw fail(405,'Method not allowed');}
+  if(path==='/api/billing/eligibility/config'&&req.method==='GET')return json(res,200,eligibility.config(u));
+  if(path==='/api/billing/eligibility'&&req.method==='POST')return json(res,201,eligibility.request(u,await body(req,10000)));
+  const eligibilityHistory=/^\/api\/encounters\/([^/]+)\/eligibility$/.exec(path);
+  if(eligibilityHistory){if(req.method==='GET')return json(res,200,eligibility.history(u,eligibilityHistory[1]));throw fail(405,'Method not allowed');}
+  const eligibilityReview=/^\/api\/billing\/eligibility\/([^/]+)\/reviews$/.exec(path);
+  if(eligibilityReview){if(req.method==='POST')return json(res,201,eligibility.review(u,eligibilityReview[1],await body(req,5000)));throw fail(405,'Method not allowed');}
+  const vitalMatch=/^\/api\/encounters\/([^/]+)\/vitals$/.exec(path);
+  if(vitalMatch){if(req.method==='GET')return json(res,200,vitalHistory(db,u,vitalMatch[1]));if(req.method==='POST')return json(res,201,recordVitals(db,u,vitalMatch[1],await body(req,5000)));throw fail(405,'Method not allowed');}
   if(path==='/api/audio/config' && req.method==='GET') return json(res,200,{enabled:dev && process.env.SEED_DEMO==='true' && process.env.FICTIONAL_AUDIO_DEMO==='true',source:'SYNTHETIC_TONE_V1',statement_version:'FICTIONAL_AUDIO_V1',statement:'I agree to a fictional generated-tone demonstration, with no microphone capture. Both sample participants must agree. The assigned physician reviews and releases the tone to the sample patient portal. Either participant can refuse or withdraw; this removes access and requests deletion. Audio expires after seven days. This is simulated consent, not consent for a real visit.'});
   const ae=/^\/api\/encounters\/([^/]+)\/audio$/.exec(path);
   if(ae){if(req.method==='GET')return json(res,200,audio.list(u,ae[1]));if(req.method==='POST')return json(res,201,audio.create(u,ae[1],await body(req,4096)));throw fail(405,'Method not allowed');}
@@ -134,5 +165,5 @@ async function api(req,res,url){
   const fm=/^\/api\/files\/([^/]+)$/.exec(path);if(fm&&req.method==='GET'){const f=db.prepare('SELECT * FROM files WHERE id=? AND org_id=?').get(fm[1],u.org_id);if(!f)throw fail(404,'File not found');patientAccess(u,f.patient_id);audit(db,u,'VIEW_FILE','file',f.id);res.writeHead(200,{'Content-Type':f.mime,'Content-Disposition':`attachment; filename="${f.filename.replace(/["\\\r\n]/g,'_')}"`,'X-Content-Type-Options':'nosniff','Cache-Control':'no-store'});return res.end(readFileSync(join(uploadDir,f.storage_key)));}
   throw fail(404,'Route not found');
 }
-const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);if(url.pathname==='/health'&&req.method==='GET'){db.prepare('SELECT 1').get();return json(res,200,{ok:true,fictional_demo:true});}if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(req.method!=='GET')throw fail(405,'Method not allowed');const assets={'/':'index.html','/app.js':'app.js','/audio.js':'audio.js','/clearinghouse.js':'clearinghouse.js','/code-coverage.js':'code-coverage.js','/appointment-coding.js':'appointment-coding.js','/toxin-record.js':'toxin-record.js','/style.css':'style.css'};const file=assets[url.pathname];if(!file)throw fail(404,'Not found');const mime=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(readFileSync(join(root,'public',file)));}catch(e){if(!res.headersSent)json(res,e.status||500,{error:e.status?e.message:'Internal server error',issues:e.issues||e.details});else res.end();if(!e.status)console.error(e);}});
+const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);if(url.pathname==='/health'&&req.method==='GET'){db.prepare('SELECT 1').get();return json(res,200,{ok:true,fictional_demo:true});}if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(req.method!=='GET')throw fail(405,'Method not allowed');const assets={'/':'index.html','/app.js':'app.js','/authorization-planning.js':'authorization-planning.js','/billing-maintenance.js':'billing-maintenance.js','/eligibility.js':'eligibility.js','/vitals.js':'vitals.js','/audio.js':'audio.js','/clearinghouse.js':'clearinghouse.js','/code-coverage.js':'code-coverage.js','/appointment-coding.js':'appointment-coding.js','/toxin-record.js':'toxin-record.js','/style.css':'style.css'};const file=assets[url.pathname];if(!file)throw fail(404,'Not found');const mime=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(readFileSync(join(root,'public',file)));}catch(e){if(!res.headersSent)json(res,e.status||500,{error:e.status?e.message:'Internal server error',issues:e.issues||e.details});else res.end();if(!e.status)console.error(e);}});
 server.listen(port,host,()=>console.log(`ClinicCommand demo listening on http://${host}:${server.address().port}`));

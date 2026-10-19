@@ -1,5 +1,9 @@
 # Billing codes and member coverage review
 
+**October 18 update:** [billing-source monitoring and staged full-release publication](BILLING_UPDATES.md) now let administrators review and install authorized dated catalogs. New lookups prefer a published organization release for the service date; existing signed evidence remains unchanged. The [pre-service worksheet](AUTHORIZATION_PLANNING.md) records planned orders separately from actual services and payer decisions.
+
+**October 17 update:** the authenticated app now adds a [fictional electronic eligibility workflow](ELIGIBILITY_SIMULATION.md) alongside manual review. It supplies simulated general benefits and explicitly unknown procedure coverage; it never establishes real member benefits or overwrites manual evidence. The complete local demo launcher enables the test-only adapter.
+
 Billing staff can search real codes under **Billing → Billing codes & insurance coverage**. Clinicians have the same lookup inside an encounter; selecting a result fills the coverage context and, for the matching service date, the checkout code field. Codes must describe documented care. No code or diagnosis is automatically recommended because it could obtain coverage.
 
 ## Installed public releases

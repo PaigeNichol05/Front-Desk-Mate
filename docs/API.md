@@ -73,3 +73,35 @@ Staff claim lists include `transmission`, whose `status` and `label` explicitly 
 ## Appointment-driven coding review
 
 `GET/POST /api/encounters/:id/services` and `POST /api/encounters/:id/coding-review` implement source-linked service facts and human code review. See [APPOINTMENT_CODING.md](APPOINTMENT_CODING.md). Phrase mentions never create orders or billable services. When services have been recorded, checkout lines need a matching `source_review_id` from a signed performed-in-house service. The review validates catalog availability/date and preserves provenance; specialty coding, clinical meaning and coverage remain professional checks.
+## Eligibility simulation and vital observations (October 17 update)
+
+See also the October 18 [billing-update workflow](BILLING_UPDATES.md) and [authorization planning contract](AUTHORIZATION_PLANNING.md).
+
+These routes use the existing session cookie and `X-CSRF-Token` on writes. Unknown resources in another organization return 404 to authorized staff; unauthorized roles receive 403. Simulation failures are saved terminal attempts returned with HTTP 201 and `outcome: FAILED`, not an eligibility determination.
+
+| Method / route | Permission / contract |
+| --- | --- |
+| `GET /api/billing/eligibility/config` | Active BILLER/ADMIN/PHYSICIAN; flags, supported scenarios and fixed fictional identifiers |
+| `POST /api/billing/eligibility` | BILLER/ADMIN; opt-in and bundled specimen only; existing coverage context plus `member_id`, `payer_id`, `provider_reference`, matching `service_date`, `scenario`, `fictional_confirmed: true`, and organization-unique `request_key` (8–100 letters/digits/underscore/hyphen) |
+| `GET /api/encounters/:id/eligibility` | BILLER/ADMIN/PHYSICIAN in same organization; all attempt snapshots and append-only reviews |
+| `POST /api/billing/eligibility/:id/reviews` | BILLER/ADMIN; `{disposition: NEEDS_INFORMATION or REVIEWED_SIMULATION_ONLY, notes, reviewed: true}`; never approves real coverage |
+| `GET /api/billing/coverage` | Existing contract; adds nullable `simulated_eligibility` exact-context projection, staleness and professional-review flags without changing manual status |
+| `GET /api/encounters/:id/vitals` | Assigned active PHYSICIAN or this encounter's PATIENT; immutable observations, correction/current flags, units and disconnected-device status |
+| `POST /api/encounters/:id/vitals` | Assigned PHYSICIAN, open encounter only; manual `{source: MANUAL, systolic, diastolic, heart_rate, measured_at, source_reference, position, arm, notes?, supersedes_id?, reviewed: true}` or fixed fixture `{source: SIMULATED_DEVICE, reviewed: true}` |
+
+`measured_at` is a canonical UTC ISO timestamp. Manual pressure values must both be supplied or both null; pulse may be null when pressure is present. Position is `SEATED`, `STANDING`, `LYING` or `UNSPECIFIED`; arm is `LEFT`, `RIGHT` or `UNSPECIFIED`. Corrections require a current same-encounter observation ID and nonempty notes; originals remain visible. Observation IDs cannot be edited or deleted. Details: [eligibility contract](ELIGIBILITY_SIMULATION.md), [vital observations](VITAL_SIGNS.md).
+
+## Billing-source maintenance and authorization planning (October 18)
+
+All routes retain session and write-CSRF requirements. No arbitrary source URL, patient payload or insurer credential is accepted by the source-audit runner.
+
+| Endpoint | Permissions / body |
+| --- | --- |
+| `GET /api/billing/maintenance` | Active BILLER/ADMIN; own-organization schedule, fixed source directory, installed snapshots, last 20 audit runs and catalog-release metadata |
+| `POST /api/billing/maintenance/run` | BILLER/ADMIN; empty `{}` only; complete public-source check results or 409 if already running; source failures remain explicit results |
+| `POST /api/billing/catalog-releases` | ADMIN; complete normalized release, source hash, dates, source/rights attestations; CPT additionally requires license reference; stages without activating |
+| `POST /api/billing/catalog-releases/:id/publish` | ADMIN; `{reviewed:true,data_sha256,notes}` for the same-organization immutable release; stale baseline returns 409; publication affects only date-matching new lookups |
+| `POST /api/billing/authorization-drafts` | BILLER/ADMIN or assigned PHYSICIAN; existing coverage context plus current ordered `service_id`, distinct `proposed_service_date`, `reviewed:true`; returns an internal worksheet with unknown requirement, no decision and no transmission |
+| `GET /api/encounters/:id/authorization-drafts` | Same staff/assigned clinician; own-organization snapshots with staleness flags; PATIENT forbidden |
+
+`BILLING_AUDIT_ENABLED=true` enables the durable five-day background schedule while the authenticated server runs. Failed checks retry after one hour. Raw source hashes indicate observed bytes, not authoritative coding/coverage conclusions. Catalog and authorization-draft histories cannot be edited/deleted. No `/authorization-drafts/submit` route or live AI/insurer adapter is provided by this update.
