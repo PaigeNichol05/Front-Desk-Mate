@@ -24,9 +24,12 @@ test('five-day schedule persists; failed checks are unknown, retry hourly, and n
   assert.equal((await f.service.tick()).completed, 1); assert.equal(calls, BILLING_SOURCES.length);
   assert.equal((await f.service.tick()).completed, 0);
   const first = f.service.view(f.biller); assert.ok(first.history[0].results.every(r => r.status === 'BASELINE_RECORDED'));
+  assert.equal(first.payer_monitoring.all_insurers_verified, false);
+  assert.equal(first.payer_monitoring.groups.find(g => g.id === 'AETNA').status, 'LISTED_SOURCES_OBSERVED_PLAN_REVIEW_REQUIRED');
   assert.equal(Date.parse(first.next_due), time + BILLING_AUDIT_INTERVAL);
   assert.equal(first.installed.find(c => c.system === 'CPT').status, 'LICENSED_IMPORT_REQUIRED');
   const reopened = f.restart(); time += BILLING_AUDIT_INTERVAL; changed = true;
+  assert.equal(reopened.view(f.biller).payer_monitoring.groups.find(g => g.id === 'AETNA').status, 'SOURCE_CHECKS_INCOMPLETE');
   await reopened.tick();
   assert.equal(reopened.view(f.biller).history[0].outcome, 'SOURCE_CHANGES_REVIEW_REQUIRED');
   assert.equal(f.db.prepare('SELECT count(*) n FROM catalog_publications').get().n, 0);
@@ -67,6 +70,8 @@ test('public fetcher rejects unregistered URLs, cross-host redirects, wrong form
   let calls = 0;
   await assert.rejects(() => readBillingSource(BILLING_SOURCES[0], async () => { calls++; return new Response('', { status: 302, headers: { location: 'http://127.0.0.1/private' } }); }), e => e.code === 'SOURCE_REDIRECT');
   assert.equal(calls, 1);
+  const directory = BILLING_SOURCES.find(s => s.id === 'AVAILITY_DIRECTORY');
+  await assert.rejects(() => readBillingSource(directory, async () => new Response('<html><div id="app"></div><script src="app.js"></script></html>', { headers: { 'content-type': 'text/html' } })), e => e.code === 'SOURCE_FORMAT');
   await assert.rejects(() => readBillingSource(BILLING_SOURCES[0], async () => new Response('access denied', { status: 403 })), e => e.code === 'ACCESS_REQUIRED');
   await assert.rejects(() => readBillingSource(BILLING_SOURCES[0], async () => new Response('{}', { headers: { 'content-type': 'application/json' } })), e => e.code === 'SOURCE_FORMAT');
   await assert.rejects(() => readBillingSource(BILLING_SOURCES[0], async () => new Response('x'.repeat(2 * 1024 * 1024 + 1), { headers: { 'content-type': 'text/html' } })), e => e.code === 'SOURCE_TOO_LARGE');

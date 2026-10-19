@@ -7,6 +7,12 @@ export async function mountBillingMaintenance(target, me, api, message) {
     <p><b>Automatic checks: ${d.scheduled ? 'enabled · every five days while this server is running' : 'disabled'}</b><br>${d.scheduled ? 'Next due: ' + escape(d.next_due) + '. Failed source checks retry after one hour.' : 'Enable BILLING_AUDIT_ENABLED on the application server to run scheduled checks.'}</p>
     <button type="button" data-run-billing-audit ${d.running ? 'disabled' : ''}>${d.running ? 'Audit running · refresh to check results' : 'Check official billing sources now'}</button>
     <button type="button" class="secondary" data-refresh-audits>Refresh audit status</button>
+    <h3>Insurance company sources and gaps</h3>
+    <p>${escape(d.payer_monitoring.notice)} ${escape(d.payer_monitoring.configured_source_count)} fixed public URLs are configured. This count is not the number of supported insurers.</p>
+    <p><b>Live insurer connections: not connected. Member benefits: not verified.</b> An insurer listed in a clearinghouse directory still needs transaction-specific support and applicable practice enrollment. General policy research does not verify an individual member's benefits.</p>
+    <label>Find a payer group<input type="search" data-payer-filter placeholder="Company, government program, regional plan or administrator"></label>
+    <div class="scroll"><table><thead><tr><th>Payer group</th><th>Listed-source status</th><th>Missing plan details</th></tr></thead><tbody>${d.payer_monitoring.groups.map(g => `<tr data-payer-row><td>${escape(g.name)}</td><td>${escape(g.status.replaceAll('_', ' ').toLowerCase())}<br><small>${g.sources.length} listed source${g.sources.length === 1 ? '' : 's'}</small></td><td>${escape(g.gap)}</td></tr>`).join('')}</tbody></table></div>
+    <p data-payer-no-match hidden>No listed group matches. This payer has not been individually mapped; use its official plan documents and authorized staff verification. No coverage or connection is assumed.</p>
     <h3>Installed catalogs for ${escape(d.installed[0]?.checked_for_date || 'today')}</h3>
     <div class="scroll"><table><thead><tr><th>Code system</th><th>Installed release</th><th>Available entries</th><th>Review status</th></tr></thead><tbody>${d.installed.map(c => `<tr><td>${escape(c.system)}</td><td>${escape(c.source?.version || 'No dated source installed')}</td><td>${c.count ?? 0}</td><td>${escape(c.status)}</td></tr>`).join('')}</tbody></table></div>
     <p>Installed does not mean independently verified as the latest release. Missing, deleted and future-effective codes need review for the encounter date. CPT requires licensed content.</p>
@@ -17,6 +23,11 @@ export async function mountBillingMaintenance(target, me, api, message) {
     ${me.role === 'ADMIN' ? `<details><summary>Stage an authorized complete code release</summary><p>Upload normalized JSON from a verified publisher/vendor source: system, version, starts_on, ends_on, source_url, source_sha256 and codes [{code, description, starts_on, ends_on}]. CPT also requires license_reference. This does not download or authenticate the source file for you. Maximum 100,000 codes and 24 MB. Use a complete release, never a partial patch.</p><form data-stage-release><label>Complete normalized JSON release<input name="file" type="file" accept="application/json,.json" required></label><label class="check-row"><input name="complete_release" type="checkbox" required> This is the complete release for the specified system and dates.</label><label class="check-row"><input name="rights_attested" type="checkbox" required> I verified source provenance and our rights to use/display this content.</label><button>Stage code release for review</button></form></details>` : ''}
   </div>`;
   const reload = () => mountBillingMaintenance(target, me, api, message);
+  target.querySelector('[data-payer-filter]').oninput = ev => {
+    const query = ev.target.value.trim().toLowerCase(); let visible = 0;
+    target.querySelectorAll('[data-payer-row]').forEach(row => { row.hidden = !row.textContent.toLowerCase().includes(query); if (!row.hidden) visible++; });
+    target.querySelector('[data-payer-no-match]').hidden = visible > 0;
+  };
   target.querySelector('[data-refresh-audits]').onclick = () => reload().catch(message);
   target.querySelector('[data-run-billing-audit]').onclick = async ev => {
     const button = ev.target; button.disabled = true; button.textContent = 'Checking public sources…';

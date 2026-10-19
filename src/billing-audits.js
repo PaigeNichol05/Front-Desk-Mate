@@ -2,17 +2,10 @@ import { createHash } from 'node:crypto';
 import { uid, audit } from './db.js';
 import { catalogManifest, searchCodes } from './code-coverage.js';
 import { catalogReleases } from './catalog-updates.js';
+import { BILLING_SOURCES, payerMonitoringCoverage } from './billing-sources.js';
 
 export const BILLING_AUDIT_INTERVAL = 5 * 86400000;
-export const BILLING_SOURCES = Object.freeze([
-  { id: 'CMS_HCPCS', kind: 'CODE_RELEASE_INDEX', title: 'CMS HCPCS Level II quarterly releases', url: 'https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system/quarterly-update', type: 'HTML' },
-  { id: 'CMS_ICD10', kind: 'CODE_RELEASE_INDEX', title: 'CMS ICD-10 releases and guidelines', url: 'https://www.cms.gov/medicare/coding-billing/icd-10-codes', type: 'HTML' },
-  { id: 'AMA_CPT', kind: 'LICENSED_CODE_NOTICES', title: 'AMA CPT notices; licensed data feed still required', url: 'https://www.ama-assn.org/practice-management/cpt', type: 'HTML' },
-  { id: 'UHC_REIMBURSEMENT', kind: 'PAYER_POLICY_INDEX', title: 'UnitedHealthcare commercial/exchange reimbursement policies', url: 'https://www.uhcprovider.com/en/policies-protocols/commercial-policies/commercial-reimbursement-policies.html', type: 'HTML' },
-  { id: 'UHC_ANESTHESIA', kind: 'PAYER_POLICY_DOCUMENT', title: 'UnitedHealthcare professional anesthesia policy', url: 'https://www.uhcprovider.com/content/dam/provider/docs/public/policies/comm-reimbursement/COMM-Anesthesia-Policy.pdf', type: 'PDF' },
-  { id: 'AETNA_MEDICAL', kind: 'PAYER_POLICY_INDEX', title: 'Aetna medical clinical policy bulletins', url: 'https://www.aetna.com/health-care-professionals/clinical-policy-bulletins/medical-clinical-policy-bulletins.html', type: 'HTML' },
-  { id: 'CIGNA_COVERAGE', kind: 'PAYER_POLICY_INDEX', title: 'Cigna provider coverage and reimbursement policies', url: 'https://www.cigna.com/health-care-providers/coverage-and-claims/policies', type: 'HTML' },
-].map(source => Object.freeze(source)));
+export { BILLING_SOURCES } from './billing-sources.js';
 const fail = (status, message) => Object.assign(Error(message), { status });
 const iso = ms => new Date(ms).toISOString();
 const fingerprint = data => createHash('sha256').update(data).digest('hex');
@@ -67,6 +60,7 @@ export async function readBillingSource(source, fetcher = globalThis.fetch) {
     const bytes = Buffer.concat(chunks);
     if (!bytes.length || (source.type === 'PDF' && !bytes.subarray(0, 5).equals(Buffer.from('%PDF-')))) throw Object.assign(Error('Invalid source content'), { code: 'SOURCE_FORMAT' });
     const content = bytes.toString('utf8');
+    if (source.html_marker && !content.includes(source.html_marker)) throw Object.assign(Error('Directory data not present in public response'), { code: 'SOURCE_FORMAT' });
     if (source.type === 'HTML' && (/type\s*=\s*["']password/i.test(content) || /<title[^>]*>[^<]*(?:sign in|log in|access denied|verify you are human|just a moment)/i.test(content))) throw Object.assign(Error('Source requires access or verification'), { code: 'ACCESS_REQUIRED' });
     const links = source.kind === 'CODE_RELEASE_INDEX' ? [...content.matchAll(/href\s*=\s*["']([^"']+)["']/gi)].map(m => {
       try { const u = new URL(m[1].replaceAll('&amp;', '&'), url); return u.protocol === 'https:' && u.hostname === 'www.cms.gov' && /\.(zip|xlsx|txt|csv)(?:\?|$)/i.test(u.href) ? u.href : null; } catch { return null; }
@@ -148,6 +142,7 @@ export function createBillingAudits(db, { scheduled = false, reader = readBillin
         .map(({ results_json, installed_json, ...r }) => ({ ...r, results: JSON.parse(results_json), installed: JSON.parse(installed_json) }));
       audit(db, u, 'VIEW_BILLING_SOURCE_AUDITS', 'organization', u.org_id);
       return { scheduled, interval_days: 5, next_due: iso(state.next_due_ms), running: !!state.lease_token && state.lease_until_ms > clock(), sources: BILLING_SOURCES,
+        payer_monitoring: payerMonitoringCoverage(history, clock()),
         installed: installed(db, u.org_id, iso(clock()).slice(0, 10)), bundled_releases: catalogManifest, releases: catalogReleases(db, u), history, notice };
     },
   };
