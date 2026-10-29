@@ -8,14 +8,16 @@ import { openDb, seed, uid, now, audit } from './db.js';
 import { checkout, documentationChecks } from './billing.js';
 import { createClearinghouseService, backfillQueuedClaims } from './clearinghouse.js';
 import { createAudioService } from './audio.js';
+import { configurePreview, seedPreview, previewGate, previewInfo } from './preview.js';
 
 const root=resolve(import.meta.dirname,'..');
+const preview=configurePreview(); // Validate isolation/access before opening a database.
 const db=openDb(resolve(root,process.env.DATABASE_PATH||'data/clinic.db'));
 const dev=process.env.NODE_ENV!=='production';
 const secureCookies=!dev||process.env.COOKIE_SECURE==='true';
 if(process.env.SEED_DEMO==='true') {
   if(!dev) throw new Error('Demo seeding is forbidden in production');
-  seed(db);
+  if(preview.enabled)seedPreview(db);else seed(db);
 }
 const secret=process.env.SESSION_SECRET;
 if(!secret || secret.length<32) throw new Error('Set SESSION_SECRET to at least 32 characters');
@@ -59,6 +61,8 @@ async function api(req,res,url){
   }
   if(path==='/api/session'&&req.method==='GET') {const u=requireUser(req);return json(res,200,{user:pick(u,['id','name','role']),csrf:session(req).csrf});}
   const u=requireUser(req);
+  if(path==='/api/preview'&&req.method==='GET')return json(res,200,previewInfo(db,u,preview));
+  if(preview.enabled&&path==='/api/files'&&req.method==='POST')throw fail(403,'File uploads are disabled in this fictional preview');
   if(path==='/api/audio/config' && req.method==='GET') return json(res,200,{enabled:dev && process.env.SEED_DEMO==='true' && process.env.FICTIONAL_AUDIO_DEMO==='true',source:'SYNTHETIC_TONE_V1',statement_version:'FICTIONAL_AUDIO_V1',statement:'I agree to a fictional generated-tone demonstration, with no microphone capture. Both sample participants must agree. The assigned physician reviews and releases the tone to the sample patient portal. Either participant can refuse or withdraw; this removes access and requests deletion. Audio expires after seven days. This is simulated consent, not consent for a real visit.'});
   const ae=/^\/api\/encounters\/([^/]+)\/audio$/.exec(path);
   if(ae){if(req.method==='GET')return json(res,200,audio.list(u,ae[1]));if(req.method==='POST')return json(res,201,audio.create(u,ae[1],await body(req,4096)));throw fail(405,'Method not allowed');}
@@ -94,7 +98,7 @@ async function api(req,res,url){
     if(em[2]==='sections'&&req.method==='GET')return json(res,200,db.prepare('SELECT id,kind,content,created_at FROM clinical_sections WHERE encounter_id=? ORDER BY created_at').all(e.id));
     if(em[2]==='checks'&&req.method==='POST'){requireUser(req,['PHYSICIAN','BILLER','ADMIN']);const b=await body(req);return json(res,200,{issues:documentationChecks(db,e,b.lines||[])});}
     requireUser(req,['PHYSICIAN','ADMIN']);
-    if(em[2]==='sections'&&req.method==='POST'){if(e.status!=='OPEN')throw fail(409,'Signed encounter is locked');const b=await body(req);requireFields(b,['kind','content']);if(!['SYMPTOM','HISTORY','MEDICATION','ALLERGY','EXAM','ASSESSMENT','PLAN','LAB','CONSENT','MESSAGE','CALL','DICTATION'].includes(b.kind)||b.content.length>10000)throw fail(400,'Invalid section');const id=uid();db.prepare('INSERT INTO clinical_sections VALUES (?,?,?,?,?,?)').run(id,e.id,b.kind,b.content,u.id,now());audit(db,u,'ADD_SECTION','encounter',e.id);return json(res,201,{id});}
+    if(em[2]==='sections'&&req.method==='POST'){if(e.clinician_id!==u.id||u.role!=='PHYSICIAN')throw fail(403,'Assigned clinician must document this encounter');if(e.status!=='OPEN')throw fail(409,'Signed encounter is locked');const b=await body(req);requireFields(b,['kind','content']);if(!['SYMPTOM','HISTORY','MEDICATION','ALLERGY','EXAM','ASSESSMENT','PLAN','LAB','CONSENT','MESSAGE','CALL','DICTATION'].includes(b.kind)||b.content.length>10000)throw fail(400,'Invalid section');const id=uid();db.prepare('INSERT INTO clinical_sections VALUES (?,?,?,?,?,?)').run(id,e.id,b.kind,b.content,u.id,now());audit(db,u,'ADD_SECTION','encounter',e.id);return json(res,201,{id});}
     if(em[2]==='sign'&&req.method==='POST'){if(e.status!=='OPEN'||e.clinician_id!==u.id)throw fail(403,'Assigned clinician must sign open encounter');db.prepare("UPDATE encounters SET status='SIGNED',signed_at=? WHERE id=?").run(now(),e.id);audit(db,u,'SIGN','encounter',e.id);return json(res,200,{ok:true});}
     if(em[2]==='checkout'&&req.method==='POST'){if(e.clinician_id!==u.id)throw fail(403,'Assigned clinician must check out');const b=await body(req);if(!Array.isArray(b.lines)||b.lines.length>20)throw fail(400,'Invalid claim lines');return json(res,201,checkout(db,u,e.id,b.lines));}
   }
@@ -134,5 +138,5 @@ async function api(req,res,url){
   const fm=/^\/api\/files\/([^/]+)$/.exec(path);if(fm&&req.method==='GET'){const f=db.prepare('SELECT * FROM files WHERE id=? AND org_id=?').get(fm[1],u.org_id);if(!f)throw fail(404,'File not found');patientAccess(u,f.patient_id);audit(db,u,'VIEW_FILE','file',f.id);res.writeHead(200,{'Content-Type':f.mime,'Content-Disposition':`attachment; filename="${f.filename.replace(/["\\\r\n]/g,'_')}"`,'X-Content-Type-Options':'nosniff','Cache-Control':'no-store'});return res.end(readFileSync(join(uploadDir,f.storage_key)));}
   throw fail(404,'Route not found');
 }
-const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);if(url.pathname==='/health'&&req.method==='GET'){db.prepare('SELECT 1').get();return json(res,200,{ok:true,fictional_demo:true});}if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(req.method!=='GET')throw fail(405,'Method not allowed');const assets={'/':'index.html','/app.js':'app.js','/audio.js':'audio.js','/clearinghouse.js':'clearinghouse.js','/code-coverage.js':'code-coverage.js','/appointment-coding.js':'appointment-coding.js','/toxin-record.js':'toxin-record.js','/style.css':'style.css'};const file=assets[url.pathname];if(!file)throw fail(404,'Not found');const mime=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(readFileSync(join(root,'public',file)));}catch(e){if(!res.headersSent)json(res,e.status||500,{error:e.status?e.message:'Internal server error',issues:e.issues||e.details});else res.end();if(!e.status)console.error(e);}});
+const server=http.createServer(async(req,res)=>{try{if(!previewGate(preview,req,res))return;const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);if(url.pathname==='/health'&&req.method==='GET'){db.prepare('SELECT 1').get();return json(res,200,{ok:true,fictional_demo:true});}if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(req.method!=='GET')throw fail(405,'Method not allowed');const assets={'/':'index.html','/app.js':'app.js','/preview.js':'preview.js','/audio.js':'audio.js','/clearinghouse.js':'clearinghouse.js','/code-coverage.js':'code-coverage.js','/appointment-coding.js':'appointment-coding.js','/toxin-record.js':'toxin-record.js','/style.css':'style.css'};const file=assets[url.pathname];if(!file)throw fail(404,'Not found');const mime=file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html';res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; img-src 'self' blob:; media-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});res.end(readFileSync(join(root,'public',file)));}catch(e){if(!res.headersSent)json(res,e.status||500,{error:e.status?e.message:'Internal server error',issues:e.issues||e.details});else res.end();if(!e.status)console.error(e);}});
 server.listen(port,host,()=>console.log(`ClinicCommand demo listening on http://${host}:${server.address().port}`));

@@ -1,3 +1,13 @@
+UPDATED ISOLATED PREVIEW
+Open Start-Front-Desk-Mate-Preview.command (Mac) or .bat (Windows),
+or run: npm run demo:preview
+Needs Node 24+. No dependency install. Today contains the guided scenarios.
+Accounts: doctor@example.test, patient@example.test, biller@example.test
+Sample account password: DemoOnly!ChangeMe123
+Guide and hosted setup: docs/AUTHENTICATED_PREVIEW.md
+Fictional data only. No real payer transmission or device ingestion.
+
+ORIGINAL LOCAL DEMO INSTRUCTIONS
 FRONT DESK MATE — COMPLETED FICTIONAL DEMONSTRATION
 
 1. Extract this entire ZIP to a folder on your Mac or Windows computer.

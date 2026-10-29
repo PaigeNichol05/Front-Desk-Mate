@@ -4,3 +4,6 @@ uploads/
 node_modules/
 *.db*
 *.log
+
+.preview/
+.preview.env
