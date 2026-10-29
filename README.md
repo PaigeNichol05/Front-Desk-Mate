@@ -4,6 +4,12 @@ A runnable, dependency-free Node 24 and SQLite starter for one unified patient/p
 
 **Front Desk Mate** is the patient-facing product name. “Managing patient care” describes its purpose, not its name. The existing repository and Railway demo address remain in place. See the [care CRM, scheduling, reminders and on-call design](docs/MPC_CARE_CRM.md). The public demo simulates these features; the local API does not yet implement the new booking, reminder or chatbot services.
 
+## Updated authenticated preview
+
+Run `npm run demo:preview` (Node 24+, no dependency install), or open the new `Start-Front-Desk-Mate-Preview` launcher for your platform. The Today page guides physician, billing and patient evaluation through source-linked medication coding, coverage review, checkout, simulated claim responses, detailed Botox records and a non-billable outside CT order. It uses an isolated `.preview` dataset; `npm run demo:preview:fresh` starts another clean run.
+
+See [preview walkthrough and separate Railway deployment](docs/AUTHENTICATED_PREVIEW.md). Hosted mode requires a private reviewer gate plus application login, a dedicated volume and secure cookies. Uploads, audio, real insurer transmission and device ingestion are disabled. PR #3 features are excluded. The original public concept and its root Railway configuration remain unchanged. Railway deployment state could not be verified on October 29, 2026 because its connection requires reauthentication; this package supplies deployment-ready source and instructions.
+
 ## Open the completed fictional demonstration
 
 With Node.js 24+ installed, double-click `Start-Front-Desk-Mate.command` on Mac or `Start-Front-Desk-Mate.bat` on Windows. Alternatively run `npm run demo:complete`. The launcher opens the authenticated app, enables the fixed synthetic-audio specimen, selects an available local port, and preserves files/database in this project folder. It binds only to `127.0.0.1`; no configuration editing or npm dependency install is required. Keep its terminal open during use. See `START-HERE.txt` for accounts and the physician/patient walkthrough. The launcher is strictly for local fictional demonstrations and is not a hosted production configuration.
@@ -29,7 +35,7 @@ Open `http://127.0.0.1:3000`. Requires Node 24 or later; `npm install` is unnece
 
 - Role-specific Today, Patients, Schedule, Inbox, Files, and Billing screens. Patients can see only their own chart metadata, appointments, file list, claims, and authorizations. Practice users are restricted to their organization; clinician signing/checkout is limited to the assigned physician.
 - Structured sections for symptoms, history, medication, allergies, exam, assessment, plan, lab, consent, calls, messages, and dictation text. Signed encounters lock clinical sections in this starter. Images and PDFs are stored outside the public directory and downloaded only after authorization checks.
-- Manual ICD-10-CM, CPT, HCPCS, and modifier **suggestions for review**. The checkout form accepts reviewed procedure/diagnosis/modifier entries. The example code in the test is a specimen, not a coding recommendation. There is no AI code inference, official code catalog, payer rule engine, or licensed CPT dataset included.
+- Manual ICD-10-CM, CPT, HCPCS, and modifier **suggestions for review**. The checkout form accepts reviewed procedure/diagnosis/modifier entries. The example code in the test is a specimen, not a coding recommendation. The merged application includes bundled official CMS HCPCS and ICD-10-CM catalogs plus source-linked service review. AI code inference, a complete payer rule engine and a licensed CPT dataset are not included.
 - At checkout, required signed documentation, assessment, plan, demographic coverage, line structure, and any linked approved authorization are checked. A transaction creates the claim and lines once, marks the encounter checked out, and records an event. Status is `AWAITING_CONNECTOR`, explicitly meaning **not transmitted**.
 - Biller APIs for authorization requests, recorded denials, draft appeals, payment posting, claim events, and claim status. Patient claim view omits member IDs. External acknowledgments and remittances require an integration.
 
@@ -83,7 +89,7 @@ The production target is being reevaluated for cost. The current Railway service
 
 ## Roadmap
 
-The [billing code and clearinghouse plan](docs/BILLING_CODE_AND_CLEARINGHOUSE_PLAN.md) specifies an authoritative code-description panel, service-date and payer-specific requirements, documentation checks, and a contracted clearinghouse integration. It includes configurable office specialties (initial practice: pain management primary, spine care secondary; orthopedics also configurable) and individual physician, NP, and PA profiles for provider-specific billing review. These are planned production features; the fictional demo has no official code catalog or live claim transmission. Claim acceptance for processing and payment will be tracked separately.
+The [billing code and clearinghouse plan](docs/BILLING_CODE_AND_CLEARINGHOUSE_PLAN.md) specifies an authoritative code-description panel, service-date and payer-specific requirements, documentation checks, and a contracted clearinghouse integration. It includes configurable office specialties (initial practice: pain management primary, spine care secondary; orthopedics also configurable) and individual physician, NP, and PA profiles for provider-specific billing review. The merged authenticated application now includes official HCPCS/ICD-10-CM catalogs and detailed medication/service review; live claim transmission and the remaining production integrations are still unavailable. Claim acceptance for processing and payment will be tracked separately.
 
 Priority: durable authentication and migrations; appointments/check-in and patient intake; coded terminology and professional review controls; eligibility and prior authorization connector; claims clearinghouse worker and webhook inbox; remittance reconciliation; appeal submission and document packages; full document imaging, comparison, communication, and clinical decision support. AI output should stay reviewable and attributable to a human professional.
 
@@ -119,7 +125,7 @@ The private directory uses mode `0700`, files use `0600`, filenames are server-g
 
 ## Hosted authenticated fictional demo on Railway
 
-The separate authenticated demonstration uses `railway-app-demo.json`; the original `railway.json` still serves the public concept. Configure one replica, `NODE_ENV=development`, `SEED_DEMO=true`, `FICTIONAL_AUDIO_DEMO=true`, `COOKIE_SECURE=true`, `HOST=0.0.0.0`, and a generated `SESSION_SECRET`. Mount private persistent storage at `/data`, with `DATABASE_PATH=/data/clinic.db`, `UPLOAD_DIR=/data/uploads`, and `AUDIO_DIR=/data/private-audio`. `GET /health` checks SQLite availability without exposing chart data. The nonproduction runtime is intentional: this deployment accepts fictional demonstrations only and makes no PHI-ready claim. HTTPS session cookies are Secure, HttpOnly and SameSite=Strict. Restart logs users out while encounter metadata/files persist. The three seeded accounts are shared fictional walkthrough identities; do not use them for real patient information.
+The separate authenticated demonstration uses `railway-app-demo.json`, which now starts the isolated `npm run demo:preview` launcher. The original `railway.json` still serves the public concept. Hosted preview requires a separate service and volume, private reviewer gate credentials, `PREVIEW_HOSTED=true`, `PREVIEW_DATA_DIR`, and a generated `SESSION_SECRET`. The launcher forces Secure cookies and fictional-only adapters and disables audio/uploads. See the complete [deployment instructions and verification status](docs/AUTHENTICATED_PREVIEW.md). Do not use the earlier ungated hosted configuration or real patient data.
 
 ## Fictional denial-correction walkthrough
 
