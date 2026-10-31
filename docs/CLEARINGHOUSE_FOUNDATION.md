@@ -12,6 +12,8 @@ Use Node.js 24 or newer and `npm run demo:complete`. The local launcher enables 
 4. For a completed rejection, change the sample line values, state the correction reason, attest to review, and queue a reviewed fictional correction. This creates a new revision with a new submission identifier; the original lines and history remain unchanged. The correction demo uses the fictional paid scenario.
 5. For a denial, the panel explains the need for staff review. No automatic denial resubmission or appeal transmission exists. The existing manually entered denial/appeal records remain a separate local workflow.
 
+The current browser correction form reconstructs legacy manual line fields and does not retain source-review/component metadata. It cannot complete a correction for source-linked or toxin lines. The correction API supports those lines only when each `source_review_id`, any `drug_component`, and the reviewed procedure/diagnosis/modifier/units are preserved and pass the source checks. A charge-only correction can retain its original review; changed reviewed coding values require a matching new human review. See [appointment coding](APPOINTMENT_CODING.md) and [API.md](API.md). This limitation does not prevent initial source-linked checkout or fictional claim processing.
+
 The public Railway `demo:host` service still serves its read-only concept demo. This new foundation runs in the authenticated `src/server.js` application and local complete-demo launcher; it does not change the Railway deployment configuration.
 
 ## Persistence and failure behavior

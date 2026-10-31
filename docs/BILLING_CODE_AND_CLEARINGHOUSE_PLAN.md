@@ -1,6 +1,12 @@
 # Billing code review and clearinghouse plan
 
-Requested product direction: show the exact billing code, authoritative description, and applicable documentation and payer requirements when staff request or review a code, then check the claim before submission to a contracted healthcare clearinghouse. This document is a planned feature specification, not an implemented integration or a promise of acceptance/payment. The fictional app still uses `PAYER_ADAPTER=none` and queues claims as `AWAITING_CONNECTOR`; no claims leave the app.
+Requested product direction: show the exact billing code, authoritative description, and applicable documentation and payer requirements when staff request or review a code, then check the claim before submission to a contracted healthcare clearinghouse. This document specifies the broader production target; some foundations below are already implemented in merged `main`, while live integrations and the remaining requirements are planned. Nothing here promises insurer acceptance or payment.
+
+## Implemented foundation versus production target
+
+The authenticated local application already provides [official dated CMS lookup and private licensed CPT import controls](CODES_AND_COVERAGE.md), staff-entered exact-context coverage evidence, [source-linked clinician/service coding review](APPOINTMENT_CODING.md), [detailed toxin administration records](BOTULINUM_ADMINISTRATION.md) and a [persistent test-only clearinghouse outbox and fictional lifecycle](CLEARINGHOUSE_FOUNDATION.md). Catalog lookup and staff evidence do not verify authenticated member eligibility, clinical coding correctness or payment. CPT content is not supplied and licensing rights are not validated by attestation.
+
+The underlying claim remains `AWAITING_CONNECTOR` during simulation. Separate staff-only `SIMULATED_*` statuses distinguish fictional transport, acceptance/rejection, adjudication, denial and remittance; no simulated remittance posts a patient payment. Retry/idempotency/restart controls and reviewed rejection revisions exist for that test adapter. There is no real insurer connection, authenticated eligibility response, X12 transport/parser, payer-policy engine, official payer-form integration or production-ready clinical deployment. The browser-only concept uses fixed specimens and scripted chart/form steps instead of these authenticated services. See [INTEGRATIONS.md](INTEGRATIONS.md) and [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) for live-connection gaps and release gates.
 
 ## Code request and review panel
 
@@ -36,7 +42,7 @@ Practice customization is permission-controlled and audited. Templates may add i
 
 Validate applicable eligibility for the service date, provider identity/enrollment, member and payer routing identifiers, code validity, diagnosis support, modifiers, units, place of service, authorization, required documents, and filing deadlines. Apply relevant code-pair and unit edits with versioned sources. Medicare NCCI rules are not automatically the rules for every commercial payer. Record exceptions and professional review rather than labeling unknown checks as passed.
 
-The production submit path must hold a claim with unresolved required checks. Existing checkout checks remain structural demo checks; they do not establish valid coding, coverage, or payment eligibility.
+The production submit path must hold a claim with unresolved required checks. Existing checkout checks include required documentation, structural checks, source-review matches where required and any supplied authorization reference. Source-linked code reviews also check installed catalog presence/date and limited toxin arithmetic/wastage conditions. These controls do not establish comprehensive coding correctness, coverage or payment eligibility; legacy encounters without service records retain a limited manual checkout path.
 
 ## Contracted clearinghouse
 
