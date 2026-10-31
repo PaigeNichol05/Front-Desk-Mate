@@ -1,4 +1,4 @@
-FRONT DESK MATE — COMPLETED FICTIONAL DEMONSTRATION
+FRONT DESK MATE — AUTHENTICATED FICTIONAL DEMONSTRATION
 
 1. Extract this entire ZIP to a folder on your Mac or Windows computer.
 2. Install Node.js 24 or newer from https://nodejs.org/ if it is not installed.
@@ -13,6 +13,18 @@ Demo accounts
   Patient:   patient@example.test
   Biller:    biller@example.test
   Password:  DemoOnly!ChangeMe123
+
+Try the updated billing workflow
+  As biller, open Billing -> Billing codes & insurance coverage. Search the
+  official CMS HCPCS or ICD-10-CM catalog by code/description and service date.
+  CPT is not bundled; private licensed import requires an organization ADMIN
+  (there is no seeded ADMIN account). Catalog lookup does not verify coverage.
+  As physician, document services/medication facts before signing under
+  "What happened at this appointment?" Link each service to a source note.
+  After signing, review date-valid codes and create a claim from selected
+  reviewed performed-service lines. As biller, open the claim and choose a
+  fictional paid, rejected or denied outcome. No insurer is contacted.
+  Follow docs/DEMO_WALKTHROUGH.md for the full sequence and limitations.
 
 Try the completed audio workflow BEFORE signing the sample encounter
   Sign in as physician. Choose Patients, Open the encounter, then create
@@ -31,9 +43,17 @@ Do not share those folders. Downloaded copies cannot be recalled on withdrawal.
 This is a runnable development demonstration, not a clinical production EHR.
 No real patient information is permitted. Audio is a generated tone: no
 microphone capture, actual visit recordings, or external transcription.
-Billing codes are manual specimens and claims are never sent to insurers.
-Real clinical/payer use requires the work documented in PRODUCTION_READINESS.md.
+CMS HCPCS/ICD-10-CM lookup, source-linked coding, detailed toxin records,
+staff-entered coverage evidence and a persistent test-only claim outbox are
+implemented. Coverage starts unverified; no authenticated member eligibility
+response is available. Simulated responses never post real patient payments.
+Claims are never sent to insurers. Real clinical/payer use requires the work
+documented in docs/PRODUCTION_READINESS.md and docs/INTEGRATIONS.md.
 
 The public Railway concept preview is a separate browser-only walkthrough.
-This package includes the authenticated server-backed application.
+It has no login, database or official code lookup. This package includes the
+authenticated server-backed application; the launcher enables synthetic audio
+and fictional clearinghouse processing for the bundled sample patient only.
+Saved signed/checked-out encounters stay locked after restart. Use a separate
+fresh project copy for an independent walkthrough, with fictional data only.
 Read README.md and docs/API.md for the implemented features and boundaries.
