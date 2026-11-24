@@ -3,6 +3,7 @@ import { migrateEligibility } from './eligibility.js';
 import { migrateVitals } from './vitals.js';
 import { migrateCatalogUpdates } from './catalog-updates.js';
 import { migrateBillingAudits } from './billing-audits.js';
+import { migratePayerRegistry } from './payer-registry.js';
 import { migrateAuthorizationPlanning } from './authorization-planning.js';
 import { migrateCodeCoverage } from './code-coverage.js';
 import { migrateClearinghouse } from './clearinghouse-schema.js';
@@ -43,6 +44,7 @@ export function openDb(path) {
   migrateVitals(db);
   migrateCatalogUpdates(db);
   migrateBillingAudits(db);
+  migratePayerRegistry(db);
   migrateAuthorizationPlanning(db);
   return db;
 }

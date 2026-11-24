@@ -4,7 +4,7 @@ Product scope: support the full U.S. health-payer market, including national and
 
 ## Current source monitoring
 
-`src/billing-sources.js` defines 21 fixed public URLs and 14 research groups. The authenticated Billing maintenance screen displays these groups, current source observations, missing product/state/affiliate details and a search field. Groups are not transaction-routing identities. A national carrier group must not merge distinct payer IDs, affiliates, plans, state rules or employer exceptions.
+`src/billing-sources.js` defines 29 fixed public URLs and 14 research groups. The authenticated Billing maintenance screen displays these groups, current source observations, missing product/state/affiliate details and a search field. Groups are not transaction-routing identities. A national carrier group must not merge distinct payer IDs, affiliates, plans, state rules or employer exceptions.
 
 The five-day worker in PR #3 monitors all configured URLs, including additions for Medicare NCCI pair/unit edits and drug waste; UHC medical policies; Humana; Molina; Ambetter; a Kaiser Colorado provider index; BCBS local-company discovery; state Medicaid/CHIP discovery; TRICARE; VA community-care claims; and Stedi/Availity transaction-directory information. Existing CMS, AMA, Aetna, Cigna and UHC sources remain. Reading a directory only checks that directory URL. It does not recursively monitor its linked insurers, all states, every procedure or all policy PDFs. Index changes do not prove a policy change; an unchanged index does not prove downstream documents are unchanged.
 
@@ -31,3 +31,8 @@ The separate ChatGPT audit is research reporting. Updating its payer scope does 
 - CMS Medicaid/CHIP state profiles: https://www.medicaid.gov/state-overviews-0
 
 Stedi recommends refreshing a cached transaction directory at least daily. Preserve the requested five-day billing-policy audit cadence separately; a future authorized directory synchronization needs its own freshness policy. Neither synchronization is live in this test foundation.
+
+
+## Exact payer completion workflow
+
+The follow-up adds an organization-isolated exact payer registry under Billing maintenance, seven policy checks and seven transaction checks per mapping, plus explicit discovery worklists for all 50 states, DC and five territories. See [PAYER_COMPLETION.md](PAYER_COMPLETION.md). These worklists enumerate jurisdictions, not a completed census of agencies, programs, MCOs or insurers. The source reader now includes eight additional fixed regional/document URLs from research; their addition does not imply a successful check.

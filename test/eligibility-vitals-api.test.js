@@ -192,3 +192,22 @@ test('pre-service authorization HTTP drafts are source-linked worksheets and nev
   assert.equal((await s.request(path+'/submit',{user:biller,method:'POST',body:b})).status,404);
   assert.equal((await s.request('/authorization-planning.js')).status,200);
 });
+
+
+test('payer registry HTTP workflow enforces roles and CSRF, separates support from benefits and persists evidence', async t => {
+  const s=await start(t), biller=await s.login('biller@example.test'), doctor=await s.login('doctor@example.test'), patient=await s.login('patient@example.test');
+  const path='/api/billing/payer-registry', identity={payer_name:'Fictional payer',group_id:'MEDICAID',product:'Fictional CO plan',jurisdiction:'CO',vendor:'Fictional namespace',payer_id:'00540',provider_context:'Fictional practice',service_scope:'Fictional outpatient service',reviewed:true};
+  assert.equal((await s.request(path)).status,401);
+  for(const user of [doctor,patient])assert.equal((await s.request(path,{user})).status,403);
+  assert.equal((await s.request(path,{user:biller,method:'POST',body:identity,csrf:false})).status,403);
+  const created=await s.request(path,{user:biller,method:'POST',body:identity});assert.equal(created.status,201);
+  const {mapping}=await created.json(), reviewPath=path+'/'+mapping.id+'/reviews';
+  const review={kind:'POLICY',category:'FILING',status:'CHECKED',source_url:'https://example.test/policy',source_reference:'Fictional policy v1',effective_from:new Date().toISOString().slice(0,10),notes:'Fictional deadline requires staff interpretation',reviewed:true,request_key:'http-1',expected_latest_id:null};
+  assert.equal((await s.request(reviewPath,{user:biller,method:'POST',body:review,csrf:false})).status,403);
+  assert.equal((await s.request(reviewPath,{user:patient,method:'POST',body:review})).status,403);
+  assert.equal((await s.request(reviewPath,{user:biller,method:'POST',body:review})).status,201);
+  assert.equal((await (await s.request(reviewPath,{user:biller,method:'POST',body:review})).json()).duplicate,true);
+  const view=await (await s.request(path,{user:biller})).json();assert.equal(view.mappings[0].payer_id,'00540');assert.equal(view.mappings[0].history.length,1);assert.equal(view.member_benefits,'NOT_VERIFIED');assert.equal(view.live_connection,'DISABLED');
+  assert.equal((await s.request(path+'?service_date=2026-02-30',{user:biller})).status,400);
+  assert.equal((await s.request('/payer-registry.js')).status,200);
+});
